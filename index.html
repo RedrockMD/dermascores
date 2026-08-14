@@ -263,5 +263,416 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
    <path d="M16 44 A 20 20 0 0 1 46 16"/><path d="M16 44 C 11 50 6 42 1 49"/></g></symbol>
  </defs>
 </svg>
-</body>
-</html>
+<div class="bg-deco" aria-hidden="true">
+ <svg viewBox="0 0 64 64" style="top:7%;left:4%;width:126px;height:126px;transform:rotate(-20deg)"><use href="#i-sciss"/></svg>
+ <svg viewBox="0 0 64 64" style="top:10%;left:77%;width:148px;height:148px;transform:rotate(26deg)"><use href="#i-clamp"/></svg>
+ <svg viewBox="0 0 64 64" style="top:33%;left:43%;width:108px;height:108px;transform:rotate(12deg)"><use href="#i-band"/></svg>
+ <svg viewBox="0 0 64 64" style="top:27%;left:11%;width:120px;height:120px;transform:rotate(40deg)"><use href="#i-needle"/></svg>
+ <svg viewBox="0 0 64 64" style="top:22%;left:64%;width:132px;height:132px;transform:rotate(-32deg)"><use href="#i-scalpel"/></svg>
+ <svg viewBox="0 0 64 64" style="top:54%;left:80%;width:140px;height:140px;transform:rotate(16deg)"><use href="#i-suture"/></svg>
+ <svg viewBox="0 0 64 64" style="top:63%;left:5%;width:120px;height:120px;transform:rotate(-14deg)"><use href="#i-sciss"/></svg>
+ <svg viewBox="0 0 64 64" style="top:79%;left:67%;width:146px;height:146px;transform:rotate(30deg)"><use href="#i-clamp"/></svg>
+ <svg viewBox="0 0 64 64" style="top:84%;left:29%;width:118px;height:118px;transform:rotate(-26deg)"><use href="#i-scalpel"/></svg>
+ <svg viewBox="0 0 64 64" style="top:47%;left:24%;width:104px;height:104px;transform:rotate(20deg)"><use href="#i-band"/></svg>
+</div>
+
+<header>
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#5b8cff"/><stop offset="1" stop-color="#34d8c4"/>
+      </linearGradient></defs>
+      <rect width="36" height="36" rx="10" fill="url(#lg)"/>
+      <path d="M9 13h18 M9 19h18 M9 25h11" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>
+      <circle cx="25.5" cy="25" r="3.6" fill="#fff"/>
+    </svg>
+    <span class="nm">Derma<b>Scores</b></span>
+  </div>
+  <div class="hbtns">
+    <button class="iconbtn" id="langBtn" title="Language">TR</button>
+    <button class="iconbtn" id="themeBtn" title="Theme">☾</button>
+  </div>
+</header>
+
+<div id="app"></div>
+<div id="printArea"></div>
+<div id="toast"></div>
+
+<footer>
+  <div class="disc" id="disc"></div>
+  <div class="sig">by RedrockMD</div>
+</footer>
+
+<script>
+"use strict";
+/* =====================================================================
+   DermaScores — clinical dermatology scoring calculators
+   Single file · zero dependencies · offline-ready
+   ===================================================================== */
+
+/* ---------- state ---------- */
+const state={lang:"tr",theme:"dark",view:"home",calc:null,query:"",cat:"all"};
+
+/* ---------- i18n helper ---------- */
+const t=(tr,en)=>state.lang==="tr"?tr:en;
+
+/* ---------- UI strings ---------- */
+const UI={
+  tagline:["Klinik dermatoloji şiddet skorlama araçları","Clinical dermatology severity scoring tools"],
+  search:["Skor ara…","Search scores…"],
+  all:["Tümü","All"],
+  none:["Sonuç bulunamadı","No scores found"],
+  back:["Geri","Back"],
+  about:["Bilgi & yorumlama","About & interpretation"],
+  range:["Aralık","Range"],
+  patient:["Hasta adı / no — rapor için (opsiyonel)","Patient name / ID — for report (optional)"],
+  score:["Skor","Score"],
+  reset:["Sıfırla","Reset"],
+  copy:["Kopyala","Copy"],
+  print:["PDF / Yazdır","PDF / Print"],
+  copied:["Sonuç panoya kopyalandı","Result copied to clipboard"],
+  cleared:["Alanlar sıfırlandı","Inputs reset"],
+  disc:["<b>Tıbbi sorumluluk reddi.</b> Bu uygulama yalnızca eğitim ve klinik karar desteği amaçlıdır; profesyonel tıbbi değerlendirmenin yerine geçmez. Sonuçları hastanın klinik bağlamında yorumlayınız.",
+        "<b>Medical disclaimer.</b> This app is for education and clinical decision support only and is not a substitute for professional medical judgment. Interpret all results within the patient's clinical context."],
+  reportTitle:["DermaScores — Klinik Skor Raporu","DermaScores — Clinical Score Report"],
+  date:["Tarih","Date"],
+  result:["Sonuç","Result"],
+  interp:["Yorum","Interpretation"]
+};
+
+/* ---------- categories ---------- */
+const CATS={
+  pso :["Psoriazis","Psoriasis","#5b8cff"],
+  ecz :["Egzama","Eczema","#34d8c4"],
+  acne:["Akne","Acne","#f59e0b"],
+  hs  :["Hidradenitis","Hidradenitis","#f472b6"],
+  urt :["Ürtiker","Urticaria","#a78bfa"],
+  pig :["Pigmentasyon","Pigmentation","#22d3ee"],
+  hair:["Saç","Hair","#fb923c"],
+  bul :["Büllöz","Bullous","#fbbf24"],
+  ctd :["Bağ dokusu","Connective tissue","#818cf8"],
+  ctcl:["Kutânöz lenfoma","Cutaneous lymphoma","#c084fc"],
+  emg :["Acil","Emergency","#fb7185"],
+  itch:["Kaşıntı","Pruritus","#4ade80"],
+  gen :["Genel","General","#94a3b8"],
+  im  :["Dahiliye","Internal medicine","#2dd4bf"]
+};
+
+/* ---------- builders & math helpers ---------- */
+const gr=(a,b)=>{if(b===undefined){b=a;a=0;}const o=[];for(let i=a;i<=b;i++)o.push([i,String(i)]);return o;};
+const num=(id,label,o={})=>({type:"num",id,label,min:o.min??0,max:o.max??100,step:o.step??1,val:o.val??0,hint:o.hint});
+const sel=(id,label,opts,o={})=>({type:"sel",id,label,opts,val:o.val??(Array.isArray(opts[0])?opts[0][0]:opts[0]),hint:o.hint});
+const rng=(id,label,o={})=>({type:"rng",id,label,min:o.min??0,max:o.max??10,step:o.step??1,val:o.val??0});
+const blk=(title,items,o={})=>({title,items,note:o.note,full:o.full,cols:o.cols});
+const note=txt=>({note:txt,items:[],full:true});
+
+/* PASI/EASI/PSSI involved-area grade (0–6) as a % range dropdown */
+const areaOpts=()=>[0,1,2,3,4,5,6].map(n=>[n,t(
+  ["0 — %0 (yok)","1 — <%10","2 — %10–29","3 — %30–49","4 — %50–69","5 — %70–89","6 — %90–100"][n],
+  ["0 — 0% (none)","1 — <10%","2 — 10–29%","3 — 30–49%","4 — 50–69%","5 — 70–89%","6 — 90–100%"][n])]);
+/* severity band: arr of [upperInclusive,cls,tr,en]; last entry catches the rest */
+const band=(x,arr)=>{for(const e of arr){if(x<=e[0])return{cls:e[1],txt:t(e[2],e[3])};}const l=arr[arr.length-1];return{cls:l[1],txt:t(l[2],l[3])};};
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+
+/* =====================================================================
+   CALCULATOR DEFINITIONS
+   Each: {id,cat,name,full:[tr,en],about:[tr,en],range,form(),calc(v)}
+   form() -> array of blocks ; calc(v) -> {score,fmt?,band?,parts?}
+   v(id) returns the raw string value of an input.
+   ===================================================================== */
+const CALCS=[
+
+/* ---- PASI ---- */
+{
+ id:"PASI",cat:"pso",name:"PASI",
+ full:["Psoriazis Alan ve Şiddet İndeksi","Psoriasis Area and Severity Index"],
+ about:["Psoriaziste 4 vücut bölgesinde eritem, endürasyon (kalınlık) ve deskuamasyonu (0–4) ve tutulan alanı birleştiren standart şiddet ölçümü. PASI ≥10 genellikle sistemik tedavi adayinı gösterir (\"onlar kuralı\").",
+        "Standard psoriasis severity measure combining erythema, induration and desquamation (0–4) with involved area across 4 body regions. PASI ≥10 generally indicates a systemic-therapy candidate (\"rule of tens\")."],
+ range:"0–72",
+ form(){
+   const R=[["h","Baş & boyun","Head & neck"],["u","Üst ekstremiteler","Upper limbs"],["t","Gövde","Trunk"],["l","Alt ekstremiteler","Lower limbs"]];
+   return [
+     note(t("Her bölge için eritem, endürasyon ve deskuamasyonu (0–4) ve tutulan alan derecesini (% aralığı) seçin.",
+            "For each region select erythema, induration and desquamation (0–4) and the involved-area grade (% range).")),
+     ...R.map(([k,tr,en])=>blk(t(tr,en),[
+       sel(k+"e",t("Eritem (kızarıklık)","Erythema"),gr(4)),
+       sel(k+"i",t("Endürasyon (kalınlık)","Induration"),gr(4)),
+       sel(k+"d",t("Deskuamasyon (pullanma)","Desquamation"),gr(4)),
+       sel(k+"a",t("Tutulan alan","Involved area"),areaOpts())
+     ]))
+   ];
+ },
+ calc(v){
+   const W={h:.1,u:.2,t:.3,l:.4};let s=0;
+   for(const k in W)s+=(+v(k+"e")+ +v(k+"i")+ +v(k+"d"))*(+v(k+"a"))*W[k];
+   return {score:s,fmt:s.toFixed(1),
+     band:band(s,[[10,"ok","Hafif","Mild"],[20,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- PSSI ---- */
+{
+ id:"PSSI",cat:"pso",name:"PSSI",
+ full:["Saçlı Deri Psoriazis Şiddet İndeksi","Psoriasis Scalp Severity Index"],
+ about:["Saçlı deri psoriazisinde eritem, endürasyon ve deskuamasyon (0–4) toplamının saçlı deri tutulum alanı derecesi (0–6) ile çarpımı.",
+        "Scalp psoriasis severity: the sum of erythema, induration and desquamation (0–4) multiplied by the scalp area grade (0–6)."],
+ range:"0–72",
+ form(){
+   return [blk(t("Saçlı deri","Scalp"),[
+     sel("e",t("Eritem","Erythema"),gr(4)),
+     sel("i",t("Endürasyon","Induration"),gr(4)),
+     sel("d",t("Deskuamasyon","Desquamation"),gr(4)),
+     sel("a",t("Tutulan saçlı deri","Involved scalp"),areaOpts())
+   ])];
+ },
+ calc(v){
+   const s=(+v("e")+ +v("i")+ +v("d"))*(+v("a"));
+   return {score:s,fmt:String(s),
+     band:band(s,[[12,"ok","Hafif","Mild"],[30,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- NAPSI ---- */
+{
+ id:"NAPSI",cat:"pso",name:"NAPSI",
+ full:["Tırnak Psoriazisi Şiddet İndeksi","Nail Psoriasis Severity Index"],
+ about:["Her tırnak 4 kadrana bölünür. Tırnak matriksi bulguları (çukurlaşma, lökonişi, lunulada kırmızı nokta, ufalanma) kaç kadranda görülürse 0–4; tırnak yatağı bulguları (onikoliz, yağ damlası lekesi, splinter kanama, subungual hiperkeratoz) 0–4. 10 el tırnağı toplamı 0–80.",
+        "Each nail is divided into 4 quadrants. Matrix features (pitting, leukonychia, red spots in the lunula, crumbling) score 0–4 by quadrants involved; nail-bed features (onycholysis, oil-drop discolouration, splinter haemorrhage, subungual hyperkeratosis) score 0–4. Total across 10 fingernails 0–80."],
+ range:"0–80",
+ form(){
+   const N=[["Sağ başparmak","Right thumb"],["Sağ işaret","Right index"],["Sağ orta","Right middle"],["Sağ yüzük","Right ring"],["Sağ serçe","Right little"],
+            ["Sol başparmak","Left thumb"],["Sol işaret","Left index"],["Sol orta","Left middle"],["Sol yüzük","Left ring"],["Sol serçe","Left little"]];
+   return N.map(([tr,en],i)=>blk(t(tr,en),[
+     sel("m"+i,t("Matriks","Matrix"),gr(4)),
+     sel("b"+i,t("Yatak","Bed"),gr(4))
+   ]));
+ },
+ calc(v){
+   let s=0;for(let i=0;i<10;i++)s+=+v("m"+i)+ +v("b"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[0,"ok","Tutulum yok","No involvement"],[20,"ok","Hafif","Mild"],[40,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- BSA ---- */
+{
+ id:"BSA",cat:"gen",name:"BSA",
+ full:["Vücut Yüzey Alanı","Body Surface Area"],
+ about:["Tutulan vücut yüzey alanı yüzdesi. Dokuzlar kuralı ile her bölgenin tutulum yüzdesi girilir. Pratik kural: hastanın bir avuç içi ≈ %1 BSA. Psoriazis/egzemada <%3 sınırlı, %3–10 orta, >%10 yaygın kabul edilir.",
+        "Percentage of body surface area involved. Enter the involved percentage of each region using the rule of nines. Practical rule: the patient's palm ≈ 1% BSA. For psoriasis/eczema <3% limited, 3–10% moderate, >10% extensive."],
+ range:"0–100%",
+ form(){
+   const R=[["hn","Baş & boyun (9%)","Head & neck (9%)"],["ra","Sağ kol (9%)","Right arm (9%)"],
+            ["la","Sol kol (9%)","Left arm (9%)"],["at","Ön gövde (18%)","Anterior trunk (18%)"],
+            ["pt","Arka gövde (18%)","Posterior trunk (18%)"],["rl","Sağ bacak (18%)","Right leg (18%)"],
+            ["ll","Sol bacak (18%)","Left leg (18%)"],["ge","Genital (1%)","Genitalia (1%)"]];
+   return [
+     note(t("Her bölge için o bölgenin tutulum yüzdesini (0–100) girin.","Enter the involved percentage (0–100) of each region.")),
+     blk(t("Dokuzlar kuralı","Rule of nines"),R.map(([k,tr,en])=>num(k,t(tr,en),{max:100})),{cols:2})
+   ];
+ },
+ calc(v){
+   const W={hn:9,ra:9,la:9,at:18,pt:18,rl:18,ll:18,ge:1};let s=0;
+   for(const k in W)s+=W[k]*clamp(+v(k)||0,0,100)/100;
+   s=clamp(s,0,100);
+   return {score:s,fmt:s.toFixed(1)+"%",
+     band:band(s,[[3,"ok","Sınırlı","Limited"],[10,"warn","Orta","Moderate"],[Infinity,"bad","Yaygın","Extensive"]])};
+ }
+},
+
+/* ---- EASI ---- */
+{
+ id:"EASI",cat:"ecz",name:"EASI",
+ full:["Egzama Alan ve Şiddet İndeksi","Eczema Area and Severity Index"],
+ about:["Atopik dermatitte 4 bölgede eritem, ödem/papülasyon, ekskoriasyon ve likenifikasyonu (0–3) ve tutulan alanı birleştirir. Bölge ağırlıkları yaşa göre değişir (8 yaş altında baş ve ekstremiteler farklı). Yorum: 0 temiz, 0.1–1 neredeyse temiz, 1.1–7 hafif, 7.1–21 orta, 21.1–50 şiddetli, >50 çok şiddetli.",
+        "Atopic dermatitis severity combining erythema, edema/papulation, excoriation and lichenification (0–3) with involved area across 4 regions. Regional weights are age-dependent (head and limbs differ under age 8). Interpretation: 0 clear, 0.1–1 almost clear, 1.1–7 mild, 7.1–21 moderate, 21.1–50 severe, >50 very severe."],
+ range:"0–72",
+ form(){
+   const R=[["h","Baş & boyun","Head & neck"],["u","Üst ekstremiteler","Upper limbs"],["t","Gövde","Trunk"],["l","Alt ekstremiteler","Lower limbs"]];
+   return [
+     blk("",[sel("age",t("Yaş grubu","Age group"),
+        [["adult",t("≥ 8 yaş — erişkin ağırlıkları","≥ 8 years — adult weights")],
+         ["child",t("< 8 yaş — bebek/çocuk ağırlıkları","< 8 years — infant weights")]])],
+        {full:true,note:t("Bölge ağırlıkları yaşa göre belirlenir.","Regional weighting depends on age.")}),
+     ...R.map(([k,tr,en])=>blk(t(tr,en),[
+       sel(k+"e",t("Eritem","Erythema"),gr(3)),
+       sel(k+"d",t("Ödem / papülasyon","Edema / papulation"),gr(3)),
+       sel(k+"x",t("Ekskoriasyon","Excoriation"),gr(3)),
+       sel(k+"l",t("Likenifikasyon","Lichenification"),gr(3)),
+       sel(k+"a",t("Tutulan alan","Involved area"),areaOpts())
+     ]))
+   ];
+ },
+ calc(v){
+   const W=v("age")==="child"?{h:.2,u:.2,t:.3,l:.3}:{h:.1,u:.2,t:.3,l:.4};
+   let s=0;
+   for(const k in W)s+=(+v(k+"e")+ +v(k+"d")+ +v(k+"x")+ +v(k+"l"))*(+v(k+"a"))*W[k];
+   return {score:s,fmt:s.toFixed(1),
+     band:band(s,[[0,"info","Temiz","Clear"],[1,"ok","Neredeyse temiz","Almost clear"],[7,"ok","Hafif","Mild"],[21,"warn","Orta","Moderate"],[50,"bad","Şiddetli","Severe"],[Infinity,"bad","Çok şiddetli","Very severe"]])};
+ }
+},
+
+/* ---- SCORAD ---- */
+{
+ id:"SCORAD",cat:"ecz",name:"SCORAD",
+ full:["Atopik Dermatit Skorlaması","Scoring Atopic Dermatitis"],
+ about:["SCORAD = A/5 + 7·B/2 + C. A: tutulan alan (% BSA, dokuzlar kuralı). B: 6 şiddet bulgusu toplamı (her biri 0–3). C: kaşıntı ve uyku kaybı VAS toplamı (0–20). Yorum: <25 hafif, 25–50 orta, >50 şiddetli.",
+        "SCORAD = A/5 + 7·B/2 + C. A: extent (% BSA, rule of nines). B: sum of 6 intensity signs (each 0–3). C: VAS sum of pruritus and sleep loss (0–20). Interpretation: <25 mild, 25–50 moderate, >50 severe."],
+ range:"0–103",
+ form(){
+   return [
+     blk(t("A — Tutulan alan (dokuzlar kuralı)","A — Extent (rule of nines)"),[
+       num("ahn",t("Baş & boyun (9%)","Head & neck (9%)"),{max:100}),
+       num("aul",t("Üst ekstremiteler (18%)","Upper limbs (18%)"),{max:100}),
+       num("atr",t("Gövde (36%)","Trunk (36%)"),{max:100}),
+       num("all",t("Alt ekstremiteler (36%)","Lower limbs (36%)"),{max:100}),
+       num("agen",t("Genital (1%)","Genitalia (1%)"),{max:100})
+     ],{cols:2,note:t("Her bölgenin tutulum yüzdesini girin.","Enter the involved % of each region.")}),
+     blk(t("B — Şiddet (her biri 0–3)","B — Intensity (each 0–3)"),[
+       sel("b1",t("Eritem","Erythema"),gr(3)),
+       sel("b2",t("Ödem / papülasyon","Edema / papulation"),gr(3)),
+       sel("b3",t("Sızıntı / krut","Oozing / crusts"),gr(3)),
+       sel("b4",t("Ekskoriasyon","Excoriation"),gr(3)),
+       sel("b5",t("Likenifikasyon","Lichenification"),gr(3)),
+       sel("b6",t("Kuruluk (etkilenmemiş deri)","Dryness (uninvolved skin)"),gr(3))
+     ],{cols:2}),
+     blk(t("C — Subjektif belirtiler (son 3 gün)","C — Subjective symptoms (last 3 days)"),[
+       rng("c1",t("Kaşıntı (VAS 0–10)","Pruritus (VAS 0–10)"),{max:10}),
+       rng("c2",t("Uyku kaybı (VAS 0–10)","Sleep loss (VAS 0–10)"),{max:10})
+     ],{cols:2})
+   ];
+ },
+ calc(v){
+   const W={ahn:9,aul:18,atr:36,all:36,agen:1};let A=0;
+   for(const k in W)A+=W[k]*clamp(+v(k)||0,0,100)/100;
+   A=clamp(A,0,100);
+   let B=0;for(let i=1;i<=6;i++)B+=+v("b"+i);
+   const C=clamp(+v("c1")||0,0,10)+clamp(+v("c2")||0,0,10);
+   const s=A/5+7*B/2+C;
+   return {score:s,fmt:s.toFixed(1),
+     parts:[["A",A.toFixed(1)],["B",String(B)],["C",String(C)]],
+     band:band(s,[[25,"ok","Hafif","Mild"],[50,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- POEM ---- */
+{
+ id:"POEM",cat:"ecz",name:"POEM",
+ full:["Hasta Odaklı Egzama Ölçütü","Patient-Oriented Eczema Measure"],
+ about:["Hastanın son 1 haftada egzama belirtilerini kaç gün yaşadığını ölçen 7 maddelik anket (her madde 0–4). Yorum: 0–2 temiz/neredeyse temiz, 3–7 hafif, 8–16 orta, 17–24 şiddetli, 25–28 çok şiddetli.",
+        "A 7-item patient questionnaire scoring how many days over the last week eczema symptoms were present (each item 0–4). Interpretation: 0–2 clear/almost clear, 3–7 mild, 8–16 moderate, 17–24 severe, 25–28 very severe."],
+ range:"0–28",
+ form(){
+   const F=[0,1,2,3,4].map(n=>[n,t(
+     ["0 — Hiç gün","1 — 1–2 gün","2 — 3–4 gün","3 — 5–6 gün","4 — Her gün"][n],
+     ["0 — No days","1 — 1–2 days","2 — 3–4 days","3 — 5–6 days","4 — Every day"][n])]);
+   const Q=[["Kaşıntı","Itchy skin"],["Uyku bozukluğu","Sleep disturbance"],["Kanama","Bleeding skin"],
+            ["Sızıntı / akıntı","Weeping / oozing"],["Çatlama","Cracked skin"],["Pullanma / dökülme","Flaking skin"],
+            ["Kuruluk / pürüzlülük","Dry or rough skin"]];
+   return [blk(t("Son 1 hafta — belirtili gün sayısı","Last week — number of symptomatic days"),
+     Q.map(([tr,en],i)=>sel("q"+i,t(tr,en),F)))];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<7;i++)s+=+v("q"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[2,"info","Temiz / neredeyse temiz","Clear / almost clear"],[7,"ok","Hafif","Mild"],[16,"warn","Orta","Moderate"],[24,"bad","Şiddetli","Severe"],[Infinity,"bad","Çok şiddetli","Very severe"]])};
+ }
+},
+
+/* ---- GAGS ---- */
+{
+ id:"GAGS",cat:"acne",name:"GAGS",
+ full:["Global Akne Derecelendirme Sistemi","Global Acne Grading System"],
+ about:["6 yüz/gövde bölgesi bölge faktörü ile çarpılır. Her bölgede en ağır lezyon tipi puanlanır (0 yok, 1 komedon, 2 papül, 3 püstül, 4 nodül). Lokal skor = faktör × derece. Yorum: 1–18 hafif, 19–30 orta, 31–38 şiddetli, ≥39 çok şiddetli.",
+        "Six facial/trunk regions each multiplied by a region factor. The most severe lesion type per region is graded (0 none, 1 comedone, 2 papule, 3 pustule, 4 nodule). Local score = factor × grade. Interpretation: 1–18 mild, 19–30 moderate, 31–38 severe, ≥39 very severe."],
+ range:"0–44",
+ form(){
+   const L=[0,1,2,3,4].map(n=>[n,t(
+     ["0 — Lezyon yok","1 — Komedon","2 — Papül","3 — Püstül","4 — Nodül"][n],
+     ["0 — None","1 — Comedones","2 — Papules","3 — Pustules","4 — Nodules"][n])]);
+   const R=[["fh","Alın (×2)","Forehead (×2)"],["rc","Sağ yanak (×2)","Right cheek (×2)"],
+            ["lc","Sol yanak (×2)","Left cheek (×2)"],["no","Burun (×1)","Nose (×1)"],
+            ["ch","Çene (×1)","Chin (×1)"],["cb","Göğüs & sırt (×3)","Chest & back (×3)"]];
+   return [blk(t("Bölgede en ağır lezyon","Most severe lesion per region"),
+     R.map(([k,tr,en])=>sel(k,t(tr,en),L)),{cols:2})];
+ },
+ calc(v){
+   const F={fh:2,rc:2,lc:2,no:1,ch:1,cb:3};let s=0;
+   for(const k in F)s+=F[k]*(+v(k));
+   return {score:s,fmt:String(s),
+     band:band(s,[[0,"ok","Lezyon yok","No lesions"],[18,"ok","Hafif","Mild"],[30,"warn","Orta","Moderate"],[38,"bad","Şiddetli","Severe"],[Infinity,"bad","Çok şiddetli","Very severe"]])};
+ }
+},
+
+/* ---- Hurley ---- */
+{
+ id:"Hurley",cat:"hs",name:"Hurley",
+ full:["Hurley Evrelemesi","Hurley Staging"],
+ about:["Hidradenitis süpürativada hastalık şiddetini 3 klinik evreye ayıran sınıflama. Tedavi seçimi için temel çerçevedir; ileri evreler cerrahi/biyolojik tedavi gerektirebilir.",
+        "A 3-stage clinical classification of hidradenitis suppurativa severity. It is the basic framework for treatment selection; advanced stages may require surgical or biologic therapy."],
+ range:"I–III",
+ form(){
+   return [blk(t("Evre","Stage"),[
+     sel("st",t("Klinik evre","Clinical stage"),[
+       ["I",t("Evre I — Abse(ler); sinüs traktı veya skar yok","Stage I — Abscess(es); no sinus tracts or scarring")],
+       ["II",t("Evre II — Tekrarlayan abseler, sinüs traktı ve skar; ayrı lezyonlar","Stage II — Recurrent abscesses with tracts and scarring; separated lesions")],
+       ["III",t("Evre III — Diffüz tutulum, çok sayıda bağlantılı trakt ve abse","Stage III — Diffuse involvement, multiple interconnected tracts and abscesses")]
+     ])])];
+ },
+ calc(v){
+   const st=v("st"),m={I:["ok","Evre I","Stage I"],II:["warn","Evre II","Stage II"],III:["bad","Evre III","Stage III"]};
+   const b=m[st]||m.I;
+   return {score:st,fmt:t("Evre ","Stage ")+st,band:{cls:b[0],txt:t(b[1],b[2])}};
+ }
+},
+
+/* ---- IHS4 ---- */
+{
+ id:"IHS4",cat:"hs",name:"IHS4",
+ full:["Uluslararası HS Şiddet Skoru","International HS Severity Score System"],
+ about:["Hidradenitis süpürativada dinamik şiddet ölçümü: nodül sayısı + (2 × abse sayısı) + (4 × drene olan tünel/fistül sayısı). Yorum: ≤3 hafif, 4–10 orta, ≥11 şiddetli.",
+        "A dynamic HS severity measure: number of nodules + (2 × abscesses) + (4 × draining tunnels/fistulas). Interpretation: ≤3 mild, 4–10 moderate, ≥11 severe."],
+ range:"0+",
+ form(){
+   return [blk(t("Lezyon sayıları","Lesion counts"),[
+     num("n",t("Nodül sayısı","Number of nodules"),{max:200}),
+     num("a",t("Abse sayısı","Number of abscesses"),{max:200}),
+     num("f",t("Drene olan tünel / fistül sayısı","Draining tunnels / fistulas"),{max:200})
+   ])];
+ },
+ calc(v){
+   const s=(+v("n"))+2*(+v("a"))+4*(+v("f"));
+   return {score:s,fmt:String(s),
+     band:band(s,[[3,"ok","Hafif","Mild"],[10,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- UAS7 ---- */
+{
+ id:"UAS7",cat:"urt",name:"UAS7",
+ full:["Ürtiker Aktivite Skoru (7 gün)","Urticaria Activity Score (7 days)"],
+ about:["Kronik spontan ürtikerde 7 gün boyunca her gün kabarcık (ürtika) ve kaşıntı 0–3 puanlanır; günlük skor 0–6, haftalık toplam 0–42. Yorum: 0 ürtikersiz, 1–6 iyi kontrol, 7–15 hafif, 16–27 orta, 28–42 şiddetli.",
+        "In chronic spontaneous urticaria, wheals and itch are each scored 0–3 daily for 7 days; daily score 0–6, weekly total 0–42. Interpretation: 0 urticaria-free, 1–6 well-controlled, 7–15 mild, 16–27 moderate, 28–42 severe."],
+ range:"0–42",
+ form(){
+   const W=[0,1,2,3].map(n=>[n,t(
+     ["0 — Yok","1 — Hafif (<20 kabarcık/24s)","2 — Orta (20–50/24s)","3 — Yoğun (>50/24s)"][n],
+     ["0 — None","1 — Mild (<20 wheals/24h)","2 — Moderate (20–50/24h)","3 — Intense (>50/24h)"][n])]);
+   const I=[0,1,2,3].map(n=>[n,t(
+     ["0 — Yok","1 — Hafif","2 — Orta","3 — Yoğun"][n],
+     ["0 — None","1 — Mild","2 — Moderate","3 — Intense"][n])]);
+   const out=[note(t("Her gün için kabarcık ve kaşıntı şiddetini girin.","Enter wheal and itch severity for each day."))];
+   for(let d=0;d<7;d++)out.push(blk(t("Gün ","Day ")+(d+1),[
+     sel("w"+d,t("Kabarcık","Wheals"),W),
+     sel("i"+d,t("Kaşıntı","Itch"),I)
+   ]));
+   return out;
+ },
+ calc(v){
+   let s=0;for(let d=0;d<7;d++)s+=(+v("w"+d))+(+v("i"+d));
+   return {score:s,fmt:String(s),
+     parts:[[t("Günlük ort.","Daily avg."),(s/7).toFixed(1)]],
+     band:band(s,[[0,"ok","Ürtikersiz","Urticaria-free"],[6,"ok","İyi kontrol","Well-controlled"],[15,"warn","Hafif","Mild"],[27,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
