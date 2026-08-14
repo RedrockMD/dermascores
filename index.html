@@ -10,4 +10,334 @@
 <meta name="description" content="DermaScores — clinical dermatology severity scoring calculators for clinicians.">
 <title>DermaScores</title>
 <link rel="manifest" href='data:application/manifest+json,{"name":"DermaScores","short_name":"DermaScores","start_url":".","display":"standalone","background_color":"%230b1018","theme_color":"%230b1018"}'>
-PLACEHOLDER_TOO_RISKY
+<style>
+:root{
+  --bg:#0b1018; --bg2:#0e1622; --surface:#141f31; --surface2:#1b2841;
+  --line:#27374f; --text:#e9eef7; --muted:#94a4be; --faint:#6b7c98;
+  --accent:#5b8cff; --accent2:#34d8c4;
+  --ok:#34d399; --warn:#fbbf24; --bad:#fb7185; --info:#60a5fa;
+  --r:16px; --r2:12px;
+  --sh:0 10px 30px rgba(0,0,0,.40);
+  color-scheme:dark;
+}
+.light{
+  --bg:#eef1f6; --bg2:#e6ebf2; --surface:#ffffff; --surface2:#f4f6fb;
+  --line:#dde3ec; --text:#101a2c; --muted:#5b6b86; --faint:#8a98ae;
+  --sh:0 10px 28px rgba(25,45,85,.10);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 100% -10%,rgba(91,140,255,.10),transparent),
+                   radial-gradient(700px 500px at -10% 0%,rgba(52,216,196,.08),transparent);
+  background-attachment:fixed;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit}
+h1,h2,h3{line-height:1.25}
+
+/* ---------- Header ---------- */
+header{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand svg{width:34px;height:34px;flex:none;border-radius:10px;box-shadow:0 4px 12px rgba(91,140,255,.35)}
+.brand .nm{font-weight:800;font-size:19px;letter-spacing:-.3px}
+.brand .nm b{color:var(--accent)}
+.hbtns{display:flex;gap:8px}
+.iconbtn{
+  display:flex;align-items:center;justify-content:center;
+  min-width:42px;height:42px;padding:0 12px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--line);
+  font-weight:700;font-size:14px;transition:.15s;
+}
+.iconbtn:active{transform:scale(.93)}
+.iconbtn:hover{border-color:var(--accent)}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:920px;margin:0 auto;padding:18px 16px 40px}
+
+/* ---------- Home ---------- */
+.hero{margin:6px 2px 18px}
+.hero h1{font-size:clamp(24px,6vw,34px);font-weight:850;letter-spacing:-.6px}
+.hero p{color:var(--muted);margin-top:5px;font-size:14.5px}
+.search{position:relative;margin:14px 0}
+.search input{
+  width:100%;height:50px;padding:0 16px 0 46px;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  color:var(--text);font-size:15.5px;outline:none;transition:.15s;
+}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.18)}
+.search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:var(--faint)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;-ms-overflow-style:none;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:650;white-space:nowrap;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);transition:.15s;
+}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:active{transform:scale(.95)}
+
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));margin-top:6px}
+.ccard{
+  text-align:left;padding:15px;border-radius:var(--r);
+  background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--cc,var(--accent));
+  transition:.15s;display:flex;flex-direction:column;gap:5px;min-height:118px;
+}
+.ccard:hover{transform:translateY(-3px);box-shadow:var(--sh);border-color:var(--cc,var(--accent))}
+.ccard:active{transform:scale(.97)}
+.ccard .ab{font-size:19px;font-weight:850;letter-spacing:-.4px}
+.ccard .fn{font-size:12.5px;color:var(--muted);flex:1}
+.ccard .tg{
+  align-self:flex-start;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  padding:3px 8px;border-radius:6px;color:var(--cc,var(--accent));
+  background:color-mix(in srgb,var(--cc,var(--accent)) 16%,transparent);
+}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:15px}
+
+/* ---------- Detail ---------- */
+.back{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--muted);font-weight:650;font-size:14px;padding:8px 0;margin-bottom:4px;
+}
+.back:hover{color:var(--accent)}
+.dhead h1{font-size:27px;font-weight:850;letter-spacing:-.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dhead .tg{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  padding:4px 9px;border-radius:7px;color:var(--cc);
+  background:color-mix(in srgb,var(--cc) 16%,transparent);
+}
+.dhead .dfull{color:var(--muted);font-size:14.5px;margin-top:3px}
+details.about{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r2)}
+details.about summary{
+  padding:11px 14px;font-weight:650;font-size:13.5px;color:var(--muted);
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px;
+}
+details.about summary::-webkit-details-marker{display:none}
+details.about summary::before{content:"ⓘ";color:var(--accent);font-size:15px}
+details.about[open] summary{border-bottom:1px solid var(--line)}
+details.about .ab-body{padding:12px 14px;font-size:13.5px;color:var(--muted)}
+details.about .ab-body .rg{margin-top:8px;color:var(--text);font-weight:650;font-size:13px}
+
+.ptrow{margin:14px 0 4px}
+.ptrow input{
+  width:100%;height:46px;padding:0 14px;background:var(--surface);
+  border:1px dashed var(--line);border-radius:var(--r2);color:var(--text);font-size:14.5px;outline:none;
+}
+.ptrow input:focus{border-style:solid;border-color:var(--accent)}
+
+/* ---------- Form blocks ---------- */
+.blocks{display:grid;gap:13px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));margin:14px 0 0}
+.block{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px;
+}
+.block.full{grid-column:1/-1}
+.block .bt{font-weight:750;font-size:15px;margin-bottom:3px}
+.block .bn{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.block .bn:last-child{margin-bottom:0}
+.fields{display:grid;gap:11px}
+.fields.c2{grid-template-columns:1fr 1fr}
+.fields.c3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:520px){.fields.c3{grid-template-columns:1fr 1fr}}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld>span{font-size:13px;font-weight:600;color:var(--muted)}
+.fld>span b{color:var(--accent);font-weight:800}
+.fld small{font-size:11.5px;color:var(--faint)}
+.fld select,.fld input[type=number]{
+  width:100%;height:44px;padding:0 12px;border-radius:11px;
+  background:var(--surface2);border:1px solid var(--line);color:var(--text);
+  font-size:15px;outline:none;transition:.12s;
+}
+.fld select:focus,.fld input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.16)}
+.fld input[type=range]{width:100%;height:44px;accent-color:var(--accent);background:transparent}
+
+/* ---------- Result bar ---------- */
+.resultbar{
+  position:sticky;bottom:0;z-index:40;margin-top:16px;
+  background:color-mix(in srgb,var(--surface) 94%,transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  padding:13px 15px calc(13px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.rb-score{display:flex;flex-direction:column;line-height:1.05}
+.rb-score .lb{font-size:10.5px;font-weight:750;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.rb-score .vl{font-size:34px;font-weight:850;letter-spacing:-1px}
+.rb-mid{flex:1;min-width:140px;display:flex;flex-direction:column;gap:7px}
+.pill{
+  align-self:flex-start;padding:5px 12px;border-radius:999px;font-weight:750;font-size:13px;
+  border:1px solid transparent;
+}
+.pill.b-ok{background:color-mix(in srgb,var(--ok) 20%,transparent);border-color:color-mix(in srgb,var(--ok) 55%,transparent);color:var(--ok)}
+.pill.b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);border-color:color-mix(in srgb,var(--warn) 55%,transparent);color:var(--warn)}
+.pill.b-bad{background:color-mix(in srgb,var(--bad) 20%,transparent);border-color:color-mix(in srgb,var(--bad) 55%,transparent);color:var(--bad)}
+.pill.b-info{background:color-mix(in srgb,var(--info) 20%,transparent);border-color:color-mix(in srgb,var(--info) 55%,transparent);color:var(--info)}
+.parts{display:flex;gap:6px;flex-wrap:wrap}
+.parts span{
+  font-size:11.5px;font-weight:650;padding:3px 8px;border-radius:7px;
+  background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+}
+.rb-act{display:flex;gap:7px}
+.actbtn{
+  width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface2);border:1px solid var(--line);transition:.13s;
+}
+.actbtn svg{width:19px;height:19px}
+.actbtn:hover{border-color:var(--accent);color:var(--accent)}
+.actbtn:active{transform:scale(.9)}
+.actbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ---------- Footer ---------- */
+footer{
+  max-width:920px;margin:24px auto 0;padding:18px 18px calc(28px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);text-align:center;
+}
+footer .disc{font-size:11.5px;color:var(--faint);line-height:1.6;max-width:560px;margin:0 auto}
+footer .disc b{color:var(--muted)}
+footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;letter-spacing:.3px}
+
+/* ---------- Toast ---------- */
+#toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,28px);
+  background:var(--text);color:var(--bg);font-weight:700;font-size:13.5px;
+  padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:200;box-shadow:var(--sh);
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- Background surgical-instrument texture ---------- */
+.bg-deco{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg-deco svg{position:absolute;color:var(--text);opacity:.05}
+.light .bg-deco svg{opacity:.075}
+@media(max-width:600px){.bg-deco svg{scale:.6}}
+
+/* ---------- Print ---------- */
+#printArea{display:none}
+@media print{
+  header,.resultbar,footer,#toast,.back,.about,.ptrow,.search,.chips,.bg-deco{display:none!important}
+  body{background:#fff;color:#000}
+  #app{display:none}
+  #printArea{display:block;padding:0 6px}
+  .pr-h{display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:14px}
+  .pr-h .t{font-size:20px;font-weight:800}
+  .pr-meta{font-size:12px;color:#333;margin-bottom:14px;line-height:1.7}
+  .pr-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px}
+  .pr-tbl td{border:1px solid #999;padding:6px 9px}
+  .pr-tbl td:last-child{text-align:right;font-weight:700;width:90px}
+  .pr-sec{font-weight:800;font-size:13px;background:#eee;padding:6px 9px;border:1px solid #999;border-bottom:none}
+  .pr-score{font-size:16px;font-weight:800;margin:10px 0;padding:10px;border:2px solid #000}
+  .pr-disc{font-size:10px;color:#555;margin-top:18px;border-top:1px solid #999;padding-top:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- background surgical-instrument texture -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+ <defs>
+  <symbol id="i-sciss" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+   <circle cx="15" cy="46" r="7"/><circle cx="30" cy="50" r="7"/>
+   <path d="M20 41 L56 13"/><path d="M25 46 L54 27"/><circle cx="34" cy="35" r="2"/></g></symbol>
+  <symbol id="i-needle" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+   <circle cx="14" cy="49" r="6"/><circle cx="25" cy="52" r="6"/>
+   <path d="M18 44 L44 25"/><path d="M29 48 L44 33"/><path d="M44 25 A 9 9 0 0 1 50 40"/></g></symbol>
+  <symbol id="i-scalpel" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+   <path d="M11 53 L38 27" stroke-width="6.5"/><path d="M38 27 L56 15 Q59 21 53 28 L43 33 Z" stroke-width="2.6"/></g></symbol>
+  <symbol id="i-clamp" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+   <circle cx="12" cy="51" r="6"/><circle cx="23" cy="54" r="6"/>
+   <path d="M16 46 L57 11"/><path d="M27 50 L55 23"/></g></symbol>
+  <symbol id="i-band" viewBox="0 0 64 64"><g transform="rotate(45 32 32)" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+   <rect x="9" y="25" width="46" height="15" rx="7.5"/><rect x="25" y="27.5" width="14" height="10" rx="2"/>
+   <circle cx="29" cy="32.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="32.5" cy="32.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="36" cy="32.5" r="1.1" fill="currentColor" stroke="none"/></g></symbol>
+  <symbol id="i-suture" viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+   <path d="M16 44 A 20 20 0 0 1 46 16"/><path d="M16 44 C 11 50 6 42 1 49"/></g></symbol>
+ </defs>
+</svg>
+<div class="bg-deco" aria-hidden="true">
+ <svg viewBox="0 0 64 64" style="top:7%;left:4%;width:126px;height:126px;transform:rotate(-20deg)"><use href="#i-sciss"/></svg>
+ <svg viewBox="0 0 64 64" style="top:10%;left:77%;width:148px;height:148px;transform:rotate(26deg)"><use href="#i-clamp"/></svg>
+ <svg viewBox="0 0 64 64" style="top:33%;left:43%;width:108px;height:108px;transform:rotate(12deg)"><use href="#i-band"/></svg>
+ <svg viewBox="0 0 64 64" style="top:27%;left:11%;width:120px;height:120px;transform:rotate(40deg)"><use href="#i-needle"/></svg>
+ <svg viewBox="0 0 64 64" style="top:22%;left:64%;width:132px;height:132px;transform:rotate(-32deg)"><use href="#i-scalpel"/></svg>
+ <svg viewBox="0 0 64 64" style="top:54%;left:80%;width:140px;height:140px;transform:rotate(16deg)"><use href="#i-suture"/></svg>
+ <svg viewBox="0 0 64 64" style="top:63%;left:5%;width:120px;height:120px;transform:rotate(-14deg)"><use href="#i-sciss"/></svg>
+ <svg viewBox="0 0 64 64" style="top:79%;left:67%;width:146px;height:146px;transform:rotate(30deg)"><use href="#i-clamp"/></svg>
+ <svg viewBox="0 0 64 64" style="top:84%;left:29%;width:118px;height:118px;transform:rotate(-26deg)"><use href="#i-scalpel"/></svg>
+ <svg viewBox="0 0 64 64" style="top:47%;left:24%;width:104px;height:104px;transform:rotate(20deg)"><use href="#i-band"/></svg>
+</div>
+
+<header>
+  <div class="brand" id="brand">
+    <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#5b8cff"/><stop offset="1" stop-color="#34d8c4"/>
+      </linearGradient></defs>
+      <rect width="36" height="36" rx="10" fill="url(#lg)"/>
+      <path d="M9 13h18 M9 19h18 M9 25h11" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>
+      <circle cx="25.5" cy="25" r="3.6" fill="#fff"/>
+    </svg>
+    <span class="nm">Derma<b>Scores</b></span>
+  </div>
+  <div class="hbtns">
+    <button class="iconbtn" id="langBtn" title="Language">TR</button>
+    <button class="iconbtn" id="themeBtn" title="Theme">☾</button>
+  </div>
+</header>
+
+<div id="app"></div>
+<div id="printArea"></div>
+<div id="toast"></div>
+
+<footer>
+  <div class="disc" id="disc"></div>
+  <div class="sig">by RedrockMD</div>
+</footer>
+
+<script>
+"use strict";
+/* =====================================================================
+   DermaScores — clinical dermatology scoring calculators
+   Single file · zero dependencies · offline-ready
+   ===================================================================== */
+
+/* ---------- state ---------- */
+const state={lang:"tr",theme:"dark",view:"home",calc:null,query:"",cat:"all"};
+
+/* ---------- i18n helper ---------- */
+const t=(tr,en)=>state.lang==="tr"?tr:en;
+
+/* ---------- UI strings ---------- */
+const UI={
+  tagline:["Klinik dermatoloji şiddet skorlama araçları","Clinical dermatology severity scoring tools"],
+  search:["Skor ara…","Search scores…"],
+  all:["Tümü","All"],
+  none:["Sonuç bulunamadı","No scores found"],
+  back:["Geri","Back"],
+  about:["Bilgi & yorumlama","About & interpretation"],
+  range:["Aralık","Range"],
+  patient:["Hasta adı / no — rapor için (opsiyonel)","Patient name / ID — for report (optional)"],
+  score:["Skor","Score"],
+  reset:["Sıfırla","Reset"],
+  copy:["Kopyala","Copy"],
+  print:["PDF / Yazdır","PDF / Print"],
+  copied:["Sonuç panoya kopyalandı","Result copied to clipboard"],
+  cleared:["Alanlar sıfırlandı","Inputs reset"],
+  disc:["<b>Tıbbi sorumluluk reddi.</b> Bu uygulama yalnızca eğitim ve klinik karar desteği amaçlıdır; profesyonel tıbbi değerlendirmenin yerine geçmez. Sonuçları hastanın klinik bağlamında yorumlayınız.",
+        "<b>Medical disclaimer.</b> This app is for education and clinical decision support only and is not a substitute for professional medical judgment. Interpret all results within the patient's clinical context."],
+  reportTitle:["DermaScores — Klinik Skor Raporu","DermaScores — Clinical Score Report"],
+  date:["Tarih","Date"],
+  result:["Sonuç","Result"],
+  interp:["Yorum","Interpretation"]
+};
+
+PLACEHOLDER_STOP
