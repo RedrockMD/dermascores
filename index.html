@@ -351,7 +351,7 @@ const CATS={
   hair:["Saç","Hair","#fb923c"],
   bul :["Büllöz","Bullous","#fbbf24"],
   ctd :["Bağ dokusu","Connective tissue","#818cf8"],
-  ctcl:["Kutânöz lenfoma","Cutaneous lymphoma","#c084fc"],
+  ctcl:["Kutanöz lenfoma","Cutaneous lymphoma","#c084fc"],
   emg :["Acil","Emergency","#fb7185"],
   itch:["Kaşıntı","Pruritus","#4ade80"],
   gen :["Genel","General","#94a3b8"],
@@ -386,7 +386,7 @@ const CALCS=[
 {
  id:"PASI",cat:"pso",name:"PASI",
  full:["Psoriazis Alan ve Şiddet İndeksi","Psoriasis Area and Severity Index"],
- about:["Psoriaziste 4 vücut bölgesinde eritem, endürasyon (kalınlık) ve deskuamasyonu (0–4) ve tutulan alanı birleştiren standart şiddet ölçümü. PASI ≥10 genellikle sistemik tedavi adayinı gösterir (\"onlar kuralı\").",
+ about:["Psoriaziste 4 vücut bölgesinde eritem, endürasyon (kalınlık) ve deskuamasyonu (0–4) ve tutulan alanı birleştiren standart şiddet ölçümü. PASI ≥10 genellikle sistemik tedavi adayını gösterir (\"onlar kuralı\").",
         "Standard psoriasis severity measure combining erythema, induration and desquamation (0–4) with involved area across 4 body regions. PASI ≥10 generally indicates a systemic-therapy candidate (\"rule of tens\")."],
  range:"0–72",
  form(){
@@ -676,3 +676,920 @@ const CALCS=[
  }
 },
 
+/* ---- VASI ---- */
+{
+ id:"VASI",cat:"pig",name:"VASI",
+ full:["Vitiligo Alan Skorlama İndeksi","Vitiligo Area Scoring Index"],
+ about:["Vitiligoda her bölgede lezyon alanı el birimi ile (1 el birimi ≈ %1 BSA) ölçülür ve rezidüel depigmentasyon yüzdesi ile çarpılır. VASI = Σ (el birimi × depigmentasyon%/100), tutulan % BSA olarak ifade edilir.",
+        "In vitiligo, lesion area per region is measured in hand units (1 hand unit ≈ 1% BSA) and multiplied by residual depigmentation. VASI = Σ (hand units × depigmentation%/100), expressed as % BSA involved."],
+ range:"0–100%",
+ form(){
+   const DP=[[0,"0%"],[10,"10%"],[25,"25%"],[50,"50%"],[75,"75%"],[90,"90%"],[100,"100%"]];
+   const R=[["Baş & boyun","Head & neck"],["Eller","Hands"],["Üst ekstremiteler","Upper limbs"],
+            ["Gövde","Trunk"],["Alt ekstremiteler","Lower limbs"],["Ayaklar","Feet"]];
+   return [
+     note(t("Her bölge için el birimi sayısını ve depigmentasyon yüzdesini girin.","Enter hand-unit count and depigmentation % for each region.")),
+     ...R.map(([tr,en],i)=>blk(t(tr,en),[
+       num("h"+i,t("El birimi (HU)","Hand units (HU)"),{max:100,step:0.5}),
+       sel("d"+i,t("Depigmentasyon","Depigmentation"),DP)
+     ]))
+   ];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<6;i++)s+=(+v("h"+i)||0)*(+v("d"+i)||0)/100;
+   s=clamp(s,0,100);
+   return {score:s,fmt:s.toFixed(1)+"%",
+     band:band(s,[[25,"ok","Sınırlı","Limited"],[50,"warn","Orta","Moderate"],[Infinity,"bad","Yaygın","Extensive"]])};
+ }
+},
+
+/* ---- VIDA ---- */
+{
+ id:"VIDA",cat:"pig",name:"VIDA",
+ full:["Vitiligo Hastalık Aktivitesi","Vitiligo Disease Activity"],
+ about:["Vitiligoda hastalık aktivitesini hastanın bildirdiği son aktivite zamanına göre 6 noktalı skala ile değerlendirir. Yüksek puan daha aktif hastalığı gösterir; negatif puan spontan repigmentasyonu ifade eder.",
+        "A 6-point scale rating vitiligo disease activity by the patient-reported time of last activity. A higher score indicates more active disease; a negative score reflects spontaneous repigmentation."],
+ range:"-1 — +4",
+ form(){
+   return [blk(t("Hastalık aktivitesi","Disease activity"),[
+     sel("a",t("Son aktivite","Last activity"),[
+       [4,t("+4 — Son 6 haftada aktif","+4 — Active in past 6 weeks")],
+       [3,t("+3 — Son 3 ayda aktif","+3 — Active in past 3 months")],
+       [2,t("+2 — Son 6 ayda aktif","+2 — Active in past 6 months")],
+       [1,t("+1 — Son 1 yılda aktif","+1 — Active in past year")],
+       [0,t("0 — En az 1 yıldır stabil","0 — Stable for at least 1 year")],
+       [-1,t("-1 — En az 1 yıldır spontan repigmentasyon","-1 — Spontaneous repigmentation ≥ 1 year")]
+     ],{val:0})
+   ])];
+ },
+ calc(v){
+   const s=+v("a");
+   return {score:s,fmt:(s>0?"+":"")+s,
+     band:band(s,[[-1,"info","Gerileme","Regressing"],[0,"ok","Stabil","Stable"],[Infinity,"bad","Aktif","Active"]])};
+ }
+},
+
+/* ---- SALT ---- */
+{
+ id:"SALT",cat:"hair",name:"SALT",
+ full:["Alopesi Şiddet Aracı","Severity of Alopecia Tool"],
+ about:["Alopesi areatada saçlı deri 4 bölgeye ayrılır (tepe %40, arka %24, sağ yan %18, sol yan %18). Her bölgenin saçsız alan yüzdesi alan ağırlığı ile çarpılır ve toplanır. SALT skoru = toplam saç kaybı yüzdesi.",
+        "In alopecia areata the scalp is divided into 4 areas (vertex 40%, posterior 24%, right side 18%, left side 18%). The hair-loss % of each area is multiplied by its weight and summed. SALT score = total % scalp hair loss."],
+ range:"0–100%",
+ form(){
+   const R=[["v","Tepe / vertex (%40)","Vertex / top (40%)"],["b","Arka / oksiput (%24)","Posterior / occiput (24%)"],
+            ["r","Sağ yan (%18)","Right side (18%)"],["l","Sol yan (%18)","Left side (18%)"]];
+   return [
+     note(t("Her bölgede saçsız (kayıp) alan yüzdesini girin.","Enter the % of hairless (lost) area in each region.")),
+     blk(t("Saçlı deri bölgeleri","Scalp regions"),R.map(([k,tr,en])=>num(k,t(tr,en),{max:100})),{cols:2})
+   ];
+ },
+ calc(v){
+   const W={v:.40,b:.24,r:.18,l:.18};let s=0;
+   for(const k in W)s+=W[k]*clamp(+v(k)||0,0,100);
+   return {score:s,fmt:s.toFixed(1)+"%",
+     band:band(s,[[0,"ok","S0 — Kayıp yok","S0 — No loss"],[24.99,"ok","S1 (<%25)","S1 (<25%)"],[49.99,"warn","S2 (%25–49)","S2 (25–49%)"],[74.99,"warn","S3 (%50–74)","S3 (50–74%)"],[99.99,"bad","S4 (%75–99)","S4 (75–99%)"],[Infinity,"bad","S5 (%100)","S5 (100%)"]])};
+ }
+},
+
+/* ---- mMASI ---- */
+{
+ id:"mMASI",cat:"pig",name:"mMASI",
+ full:["Modifiye Melazma Alan ve Şiddet İndeksi","Modified Melasma Area and Severity Index"],
+ about:["Melazmada 4 yüz bölgesinde (alın, sağ malar, sol malar, çene) tutulan alan (0–6) ve koyuluk (0–4) puanlanır. mMASI = Σ (alan × koyuluk × bölge ağırlığı); alın/malar 0.3, çene 0.1. Homojenite bileşeni çıkarılmıştır.",
+        "In melasma, 4 facial regions (forehead, right malar, left malar, chin) are scored for involved area (0–6) and darkness (0–4). mMASI = Σ (area × darkness × region weight); forehead/malar 0.3, chin 0.1. The homogeneity component is removed."],
+ range:"0–24",
+ form(){
+   const A=[0,1,2,3,4,5,6].map(n=>[n,t(
+     ["0 — Yok","1 — <%10","2 — %10–29","3 — %30–49","4 — %50–69","5 — %70–89","6 — %90–100"][n],
+     ["0 — None","1 — <10%","2 — 10–29%","3 — 30–49%","4 — 50–69%","5 — 70–89%","6 — 90–100%"][n])]);
+   const D=[0,1,2,3,4].map(n=>[n,t(
+     ["0 — Yok","1 — Hafif","2 — Orta","3 — Belirgin","4 — Maksimum"][n],
+     ["0 — Absent","1 — Slight","2 — Mild","3 — Marked","4 — Maximum"][n])]);
+   const R=[["f","Alın (×0.3)","Forehead (×0.3)"],["r","Sağ malar (×0.3)","Right malar (×0.3)"],
+            ["l","Sol malar (×0.3)","Left malar (×0.3)"],["c","Çene (×0.1)","Chin (×0.1)"]];
+   return R.map(([k,tr,en])=>blk(t(tr,en),[
+     sel(k+"a",t("Tutulan alan","Involved area"),A),
+     sel(k+"d",t("Koyuluk","Darkness"),D)
+   ]));
+ },
+ calc(v){
+   const W={f:.3,r:.3,l:.3,c:.1};let s=0;
+   for(const k in W)s+=W[k]*(+v(k+"a"))*(+v(k+"d"));
+   return {score:s,fmt:s.toFixed(1),
+     band:band(s,[[8,"ok","Hafif","Mild"],[16,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- DLQI ---- */
+{
+ id:"DLQI",cat:"gen",name:"DLQI",
+ full:["Dermatoloji Yaşam Kalitesi İndeksi","Dermatology Life Quality Index"],
+ about:["Deri hastalığının son 1 haftada yaşam kalitesine etkisini ölçen 10 maddelik anket (her madde 0–3). Yorum: 0–1 etki yok, 2–5 küçük etki, 6–10 orta etki, 11–20 çok büyük etki, 21–30 aşırı büyük etki.",
+        "A 10-item questionnaire measuring the impact of skin disease on quality of life over the last week (each item 0–3). Interpretation: 0–1 no effect, 2–5 small, 6–10 moderate, 11–20 very large, 21–30 extremely large effect."],
+ range:"0–30",
+ form(){
+   const S=[0,1,2,3].map(n=>[n,t(
+     ["0 — Hiç","1 — Biraz","2 — Çok","3 — Çok fazla"][n],
+     ["0 — Not at all","1 — A little","2 — A lot","3 — Very much"][n])]);
+   const Q=[["Kaşıntı, ağrı, batma veya yanma","Itchy, sore, painful or stinging skin"],
+            ["Utanma veya rahatsızlık hissi","Embarrassed or self-conscious"],
+            ["Alışveriş, ev veya bahçe işleri","Shopping, home or garden tasks"],
+            ["Giyilen kıyafetlerin etkilenmesi","Influence on clothes you wear"],
+            ["Sosyal veya eğlence aktiviteleri","Social or leisure activities"],
+            ["Spor yapma","Doing any sport"],
+            ["İş veya okul / çalışma","Working or studying"],
+            ["Partner, yakın arkadaş, akraba ilişkileri","Relationships with partner, friends, relatives"],
+            ["Cinsel yaşamdaki güçlükler","Sexual difficulties"],
+            ["Tedavinin yarattığı sorun (zaman, ev kirliliği)","Problems caused by treatment (time, mess)"]];
+   return [blk(t("Son 1 hafta — etki düzeyi","Last week — level of impact"),
+     Q.map(([tr,en],i)=>sel("q"+i,(i+1)+". "+t(tr,en),S)))];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<10;i++)s+=+v("q"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[1,"ok","Etki yok","No effect"],[5,"ok","Küçük etki","Small effect"],[10,"warn","Orta etki","Moderate effect"],[20,"bad","Çok büyük etki","Very large effect"],[Infinity,"bad","Aşırı büyük etki","Extremely large effect"]])};
+ }
+},
+
+/* ---- IGA ---- */
+{
+ id:"IGA",cat:"gen",name:"IGA",
+ full:["Araştırmacı Global Değerlendirmesi","Investigator's Global Assessment"],
+ about:["Hastalığın genel klinik şiddetini tek bir 5 noktalı skalada (0–4) özetleyen statik değerlendirme. Birçok dermatolojik hastalıkta ve klinik çalışmada ortak son nokta olarak kullanılır.",
+        "A static rating that summarises overall clinical severity on a single 5-point scale (0–4). Used as a common endpoint across many dermatologic conditions and clinical trials."],
+ range:"0–4",
+ form(){
+   return [blk(t("Global değerlendirme","Global assessment"),[
+     sel("g",t("Derece","Grade"),[
+       [0,t("0 — Temiz","0 — Clear")],
+       [1,t("1 — Neredeyse temiz","1 — Almost clear")],
+       [2,t("2 — Hafif","2 — Mild")],
+       [3,t("3 — Orta","3 — Moderate")],
+       [4,t("4 — Şiddetli","4 — Severe")]
+     ])])];
+ },
+ calc(v){
+   const s=+v("g");
+   return {score:s,fmt:String(s),
+     band:band(s,[[0,"info","Temiz","Clear"],[1,"ok","Neredeyse temiz","Almost clear"],[2,"ok","Hafif","Mild"],[3,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- PDAI ---- */
+{
+ id:"PDAI",cat:"bul",name:"PDAI",
+ full:["Pemfigus Hastalık Alan İndeksi","Pemphigus Disease Area Index"],
+ about:["Pemfigusta deri ve mukoza aktivitesi ile kalıcı hasarı ölçer. Bileşen alt toplamları bölgesel muayeneden elde edilip girilir: deri aktivitesi 0–120, saçlı deri 0–10, mukoza aktivitesi 0–120, hasar 0–13. Toplam 0–263.",
+        "Measures skin and mucosal activity plus persistent damage in pemphigus. Component subtotals are derived from regional examination and entered: skin activity 0–120, scalp 0–10, mucosal activity 0–120, damage 0–13. Total 0–263."],
+ range:"0–263",
+ form(){
+   return [blk(t("Bileşen alt toplamları","Component subtotals"),[
+     num("skin",t("Deri aktivitesi (0–120)","Skin activity (0–120)"),{max:120}),
+     num("scalp",t("Saçlı deri aktivitesi (0–10)","Scalp activity (0–10)"),{max:10}),
+     num("muc",t("Mukoza aktivitesi (0–120)","Mucosal activity (0–120)"),{max:120}),
+     num("dam",t("Hasar (0–13)","Damage (0–13)"),{max:13})
+   ],{cols:2,note:t("Erozyon/vezikül/bül yaygınlığına göre puanlanan bölgesel alt toplamları girin.","Enter regional subtotals scored by extent of erosions/vesicles/blisters.")})];
+ },
+ calc(v){
+   const sk=clamp(+v("skin")||0,0,120),sc=clamp(+v("scalp")||0,0,10),
+         mu=clamp(+v("muc")||0,0,120),da=clamp(+v("dam")||0,0,13);
+   const act=sk+sc+mu,tot=act+da;
+   return {score:tot,fmt:String(tot),
+     parts:[[t("Aktivite","Activity"),String(act)],[t("Hasar","Damage"),String(da)]],
+     band:band(tot,[[15,"ok","Orta","Moderate"],[45,"warn","Belirgin","Significant"],[Infinity,"bad","Yaygın","Extensive"]])};
+ }
+},
+
+/* ---- BPDAI ---- */
+{
+ id:"BPDAI",cat:"bul",name:"BPDAI",
+ full:["Büllöz Pemfigoid Hastalık Alan İndeksi","Bullous Pemphigoid Disease Area Index"],
+ about:["Büllöz pemfigoidde deri aktivitesi iki bileşenden oluşur: erozyon/bül ve ürtikeryal/eritem; mukoza ayrıca puanlanır. Aktivite toplamı = bu üç bileşen (0–360). Kaşıntı VAS (0–30) ayrı bildirilir. Aktivite yorumu: ≤19 hafif, 20–56 orta, ≥57 şiddetli.",
+        "In bullous pemphigoid, skin activity comprises two components — erosion/blister and urticarial/erythema; mucosa is scored separately. Activity total = these three components (0–360). Pruritus VAS (0–30) is reported separately. Activity interpretation: ≤19 mild, 20–56 moderate, ≥57 severe."],
+ range:"0–360",
+ form(){
+   return [blk(t("Bileşen alt toplamları","Component subtotals"),[
+     num("eb",t("Deri — erozyon / bül (0–120)","Skin — erosion / blister (0–120)"),{max:120}),
+     num("ue",t("Deri — ürtikeryal / eritem (0–120)","Skin — urticarial / erythema (0–120)"),{max:120}),
+     num("muc",t("Mukoza aktivitesi (0–120)","Mucosal activity (0–120)"),{max:120}),
+     num("pru",t("Kaşıntı VAS (0–30)","Pruritus VAS (0–30)"),{max:30})
+   ],{cols:2,note:t("Aktivite skoru ilk üç bileşenin toplamıdır; kaşıntı ayrı izlenir.","The activity score is the sum of the first three components; pruritus is tracked separately.")})];
+ },
+ calc(v){
+   const eb=clamp(+v("eb")||0,0,120),ue=clamp(+v("ue")||0,0,120),
+         mu=clamp(+v("muc")||0,0,120),pr=clamp(+v("pru")||0,0,30);
+   const act=eb+ue+mu;
+   return {score:act,fmt:String(act),
+     parts:[[t("Kaşıntı VAS","Pruritus VAS"),String(pr)]],
+     band:band(act,[[19,"ok","Hafif","Mild"],[56,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- mRSS ---- */
+{
+ id:"mRSS",cat:"ctd",name:"mRSS",
+ full:["Modifiye Rodnan Deri Skoru","Modified Rodnan Skin Score"],
+ about:["Sistemik sklerozda 17 vücut bölgesinde deri kalınlaşması palpasyonla 0–3 (0 normal, 1 hafif, 2 orta, 3 şiddetli) puanlanır. Toplam 0–51; deri tutulumunun yaygınlığını ve seyrini izlemede temel ölçüttür.",
+        "In systemic sclerosis, skin thickening is graded by palpation 0–3 (0 normal, 1 mild, 2 moderate, 3 severe) at 17 body sites. Total 0–51; the key measure for extent and course of skin involvement."],
+ range:"0–51",
+ form(){
+   const G=[0,1,2,3].map(n=>[n,t(
+     ["0 — Normal","1 — Hafif","2 — Orta","3 — Şiddetli"][n],
+     ["0 — Normal","1 — Mild","2 — Moderate","3 — Severe"][n])]);
+   const S=[["Yüz","Face"],["Ön göğüs","Anterior chest"],["Karın","Abdomen"],
+            ["Sağ parmaklar","Right fingers"],["Sol parmaklar","Left fingers"],
+            ["Sağ el","Right hand"],["Sol el","Left hand"],
+            ["Sağ ön kol","Right forearm"],["Sol ön kol","Left forearm"],
+            ["Sağ üst kol","Right upper arm"],["Sol üst kol","Left upper arm"],
+            ["Sağ uyluk","Right thigh"],["Sol uyluk","Left thigh"],
+            ["Sağ alt bacak","Right lower leg"],["Sol alt bacak","Left lower leg"],
+            ["Sağ ayak","Right foot"],["Sol ayak","Left foot"]];
+   return [blk(t("Deri kalınlaşması (17 bölge)","Skin thickening (17 sites)"),
+     S.map(([tr,en],i)=>sel("s"+i,t(tr,en),G)),{cols:2,full:true})];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<17;i++)s+=+v("s"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[14,"ok","Hafif","Mild"],[29,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- mSWAT ---- */
+{
+ id:"mSWAT",cat:"ctcl",name:"mSWAT",
+ full:["Modifiye Ağırlıklı Şiddet Değerlendirme Aracı","Modified Severity-Weighted Assessment Tool"],
+ about:["Kutanöz T hücreli lenfomada (mikozis fungoides) deri tümör yükünü ölçer. Her lezyon tipinin tuttuğu % BSA ağırlıklandırılır: mSWAT = (%yama × 1) + (%plak × 2) + (%tümör × 4). Aralık 0–400.",
+        "Quantifies cutaneous tumour burden in cutaneous T-cell lymphoma (mycosis fungoides). The % BSA of each lesion type is weighted: mSWAT = (%patch × 1) + (%plaque × 2) + (%tumour × 4). Range 0–400."],
+ range:"0–400",
+ form(){
+   return [blk(t("Lezyon tipine göre tutulan % BSA","% BSA involved by lesion type"),[
+     num("pa",t("Yama (×1)","Patch (×1)"),{max:100}),
+     num("pl",t("Plak (×2)","Plaque (×2)"),{max:100}),
+     num("tu",t("Tümör (×4)","Tumour (×4)"),{max:100})
+   ],{note:t("Avuç içi yöntemi: bir avuç içi ≈ %1 BSA.","Palm method: one palm ≈ 1% BSA.")})];
+ },
+ calc(v){
+   const s=clamp(+v("pa")||0,0,100)+2*clamp(+v("pl")||0,0,100)+4*clamp(+v("tu")||0,0,100);
+   return {score:s,fmt:String(s),
+     band:band(s,[[50,"ok","Sınırlı","Limited"],[150,"warn","Orta","Moderate"],[Infinity,"bad","Yaygın","Extensive"]])};
+ }
+},
+
+/* ---- SCORTEN ---- */
+{
+ id:"SCORTEN",cat:"emg",name:"SCORTEN",
+ full:["Toksik Epidermal Nekroliz Şiddet Skoru","Toxic Epidermal Necrolysis Severity Score"],
+ about:["Stevens-Johnson sendromu / toksik epidermal nekrolizde hastaneye yatışın ilk 24 saatinde değerlendirilen 7 ölçütlü mortalite tahmin skoru. Tahmini mortalite: 0–1 %3.2, 2 %12.1, 3 %35.3, 4 %58.3, ≥5 %90.",
+        "A 7-criterion mortality-prediction score for Stevens-Johnson syndrome / toxic epidermal necrolysis, assessed within the first 24 hours of admission. Predicted mortality: 0–1 3.2%, 2 12.1%, 3 35.3%, 4 58.3%, ≥5 90%."],
+ range:"0–7",
+ form(){
+   const YN=[[0,t("Hayır","No")],[1,t("Evet","Yes")]];
+   const C=[["c1","Yaş ≥ 40","Age ≥ 40 years"],
+            ["c2","Eşlik eden malignite","Concurrent malignancy"],
+            ["c3","Kalp hızı ≥ 120/dk","Heart rate ≥ 120 bpm"],
+            ["c4","Epidermal ayrılma > %10 BSA","Epidermal detachment > 10% BSA"],
+            ["c5","Serum üre > 10 mmol/L (BUN > 28 mg/dL)","Serum urea > 10 mmol/L (BUN > 28 mg/dL)"],
+            ["c6","Serum bikarbonat < 20 mmol/L","Serum bicarbonate < 20 mmol/L"],
+            ["c7","Kan glukozu > 14 mmol/L (> 252 mg/dL)","Serum glucose > 14 mmol/L (> 252 mg/dL)"]];
+   return [blk(t("Ölçütler (ilk 24 saat)","Criteria (first 24 hours)"),
+     C.map(([k,tr,en])=>sel(k,t(tr,en),YN)))];
+ },
+ calc(v){
+   let n=0;for(let i=1;i<=7;i++)n+=+v("c"+i);
+   const mort=n<=1?3.2:n===2?12.1:n===3?35.3:n===4?58.3:90;
+   return {score:n,fmt:n+" / 7",
+     parts:[[t("Tahmini mortalite","Predicted mortality"),mort+"%"]],
+     band:band(n,[[1,"ok","Düşük risk","Low risk"],[2,"warn","Orta risk","Moderate risk"],[Infinity,"bad","Yüksek risk","High risk"]])};
+ }
+},
+
+/* ---- 5-D Itch ---- */
+{
+ id:"5-D",cat:"itch",name:"5-D",
+ full:["5 Boyutlu Kaşıntı Ölçeği","5-D Itch Scale"],
+ about:["Kronik kaşıntıyı 5 boyutta değerlendirir: süre, derece, yön (gidişat), engellilik ve dağılım. Her boyut 1–5 puan; engellilik 4 aktivitenin en yükseğidir. Toplam 5–25; yüksek puan daha şiddetli kaşıntıyı gösterir.",
+        "Assesses chronic itch across 5 dimensions: duration, degree, direction, disability and distribution. Each dimension scores 1–5; disability uses the highest of 4 activities. Total 5–25; a higher score indicates more severe itch."],
+ range:"5–25",
+ form(){
+   const dur=[1,2,3,4,5].map(n=>[n,t(
+     ["1 — Günde < 6 saat","2 — 6–12 saat","3 — 12–18 saat","4 — 18–23 saat","5 — Tüm gün"][n-1],
+     ["1 — < 6 hours/day","2 — 6–12 hours","3 — 12–18 hours","4 — 18–23 hours","5 — All day"][n-1])]);
+   const deg=[1,2,3,4,5].map(n=>[n,t(
+     ["1 — Yok","2 — Hafif","3 — Orta","4 — Şiddetli","5 — Dayanılmaz"][n-1],
+     ["1 — Not present","2 — Mild","3 — Moderate","4 — Severe","5 — Unbearable"][n-1])]);
+   const dir=[1,2,3,4,5].map(n=>[n,t(
+     ["1 — Tamamen geçti","2 — Çok daha iyi","3 — Biraz daha iyi","4 — Değişmedi","5 — Kötüleşiyor"][n-1],
+     ["1 — Completely resolved","2 — Much better","3 — A little better","4 — Unchanged","5 — Getting worse"][n-1])]);
+   const aff=[1,2,3,4,5].map(n=>[n,t(
+     ["1 — Hiç etkilenmedi","2 — Nadiren","3 — Bazen","4 — Sıklıkla","5 — Her zaman"][n-1],
+     ["1 — Never affected","2 — Rarely","3 — Sometimes","4 — Often","5 — Always"][n-1])]);
+   return [
+     blk(t("Süre · Derece · Yön","Duration · Degree · Direction"),[
+       sel("dur",t("Süre — günlük kaşıntı saati","Duration — hours itching/day"),dur),
+       sel("deg",t("Derece — kaşıntı şiddeti","Degree — itch intensity"),deg),
+       sel("dir",t("Yön — son 2 haftadaki gidişat","Direction — trend over last 2 weeks"),dir)
+     ]),
+     blk(t("Engellilik — en yüksek puan alınır","Disability — highest score is used"),[
+       sel("ds1",t("Uyku","Sleep"),aff),
+       sel("ds2",t("Boş zaman / sosyal","Leisure / social"),aff),
+       sel("ds3",t("Ev işleri / işler","Housework / errands"),aff),
+       sel("ds4",t("İş / okul","Work / school"),aff)
+     ],{cols:2}),
+     blk(t("Dağılım","Distribution"),[
+       num("dist",t("Etkilenen vücut bölgesi sayısı (16 bölgeden)","Number of body parts affected (of 16)"),{max:16})
+     ],{note:t("0–2 bölge=1, 3–5=2, 6–10=3, 11–13=4, 14–16=5","0–2 parts=1, 3–5=2, 6–10=3, 11–13=4, 14–16=5")})
+   ];
+ },
+ calc(v){
+   const dur=+v("dur"),deg=+v("deg"),dir=+v("dir");
+   const dis=Math.max(+v("ds1"),+v("ds2"),+v("ds3"),+v("ds4"));
+   const p=clamp(+v("dist")||0,0,16);
+   const dist=p<=2?1:p<=5?2:p<=10?3:p<=13?4:5;
+   const s=dur+deg+dir+dis+dist;
+   return {score:s,fmt:String(s),
+     parts:[[t("Engellilik","Disability"),String(dis)],[t("Dağılım","Distribution"),String(dist)]],
+     band:band(s,[[9,"ok","Hafif","Mild"],[15,"warn","Orta","Moderate"],[20,"bad","Şiddetli","Severe"],[Infinity,"bad","Çok şiddetli","Very severe"]])};
+ }
+},
+
+/* ---- NRS pruritus ---- */
+{
+ id:"NRS",cat:"itch",name:"NRS",
+ full:["Kaşıntı Sayısal Derecelendirme Ölçeği","Pruritus Numerical Rating Scale"],
+ about:["Hastanın son 24 saatteki en kötü kaşıntısını 0 (kaşıntı yok) ile 10 (hayal edilebilecek en kötü kaşıntı) arasında derecelendirir. Yorum: 1–3 hafif, 4–6 orta, 7–8 şiddetli, 9–10 çok şiddetli.",
+        "The patient rates their worst itch over the last 24 hours from 0 (no itch) to 10 (worst imaginable itch). Interpretation: 1–3 mild, 4–6 moderate, 7–8 severe, 9–10 very severe."],
+ range:"0–10",
+ form(){
+   return [blk(t("En kötü kaşıntı (son 24 saat)","Worst itch (last 24 hours)"),[
+     rng("n",t("Kaşıntı şiddeti","Itch intensity"),{max:10})
+   ])];
+ },
+ calc(v){
+   const s=+v("n");
+   return {score:s,fmt:String(s),
+     band:band(s,[[0,"ok","Kaşıntısız","Itch-free"],[3,"ok","Hafif","Mild"],[6,"warn","Orta","Moderate"],[8,"bad","Şiddetli","Severe"],[Infinity,"bad","Çok şiddetli","Very severe"]])};
+ }
+},
+
+/* ---- CDLQI ---- */
+{
+ id:"CDLQI",cat:"gen",name:"CDLQI",
+ full:["Çocuk Dermatoloji Yaşam Kalitesi İndeksi","Children's Dermatology Life Quality Index"],
+ about:["DLQI'nin 4–16 yaş çocuklar için uyarlanmış 10 maddelik biçimi (her madde 0–3, son 1 hafta). Yorum: 0–1 etki yok, 2–6 küçük, 7–12 orta, 13–18 çok büyük, 19–30 aşırı büyük etki.",
+        "The version of the DLQI adapted for children aged 4–16, with 10 items (each 0–3, last week). Interpretation: 0–1 no effect, 2–6 small, 7–12 moderate, 13–18 very large, 19–30 extremely large effect."],
+ range:"0–30",
+ form(){
+   const S=[0,1,2,3].map(n=>[n,t(
+     ["0 — Hiç","1 — Biraz","2 — Çok","3 — Çok fazla"][n],
+     ["0 — Not at all","1 — A little","2 — A lot","3 — Very much"][n])]);
+   const Q=[["Kaşıntı, ağrılı veya batan deri","Itchy, scratchy, sore or painful skin"],
+            ["Utanma, üzülme veya rahatsızlık","Embarrassed, upset or sad"],
+            ["Arkadaşlık ilişkileri","Friendships affected"],
+            ["Giyilen kıyafet / ayakkabı","Clothes or shoes worn"],
+            ["Oyun veya hobiler","Playing or hobbies"],
+            ["Yüzme veya spor","Swimming or sports"],
+            ["Okul çalışması (veya tatil keyfi)","School work (or holiday enjoyment)"],
+            ["Sataşma, alay veya sorular","Teasing, bullying or questions"],
+            ["Uyku","Sleep affected"],
+            ["Tedavinin yarattığı sorun","Problems caused by treatment"]];
+   return [blk(t("Son 1 hafta — etki düzeyi","Last week — level of impact"),
+     Q.map(([tr,en],i)=>sel("q"+i,(i+1)+". "+t(tr,en),S)))];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<10;i++)s+=+v("q"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[1,"ok","Etki yok","No effect"],[6,"ok","Küçük etki","Small effect"],[12,"warn","Orta etki","Moderate effect"],[18,"bad","Çok büyük etki","Very large effect"],[Infinity,"bad","Aşırı büyük etki","Extremely large effect"]])};
+ }
+},
+
+/* ---- PEST ---- */
+{
+ id:"PEST",cat:"pso",name:"PEST",
+ full:["Psoriatik Artrit Tarama Aracı","Psoriasis Epidemiology Screening Tool"],
+ about:["Psoriazis hastalarında psoriatik artriti taramak için 5 evet/hayır sorusundan oluşan basit araç. Toplam ≥3 ise psoriatik artrit olasıdır; romatolojiye yönlendirme önerilir.",
+        "A simple 5-question yes/no tool to screen psoriasis patients for psoriatic arthritis. A total ≥3 suggests possible psoriatic arthritis and referral to rheumatology is advised."],
+ range:"0–5",
+ form(){
+   const YN=[[0,t("Hayır","No")],[1,t("Evet","Yes")]];
+   const Q=[["Hiç şişmiş ekleminiz oldu mu?","Have you ever had a swollen joint?"],
+            ["Bir doktor size artrit olduğunuzu söyledi mi?","Has a doctor ever told you that you have arthritis?"],
+            ["Tırnaklarınızda çukurcuk veya delik var mı?","Do your nails have pits or holes?"],
+            ["Topuk ağrınız oldu mu?","Have you had pain in your heel?"],
+            ["Bir parmağınız sebepsiz tümüyle şişip ağrıdı mı?","Have you had a finger or toe that was completely swollen and painful for no reason?"]];
+   return [blk(t("Tarama soruları","Screening questions"),
+     Q.map(([tr,en],i)=>sel("q"+i,(i+1)+". "+t(tr,en),YN)))];
+ },
+ calc(v){
+   let s=0;for(let i=0;i<5;i++)s+=+v("q"+i);
+   return {score:s,fmt:String(s),
+     band:band(s,[[2,"ok","Düşük olasılık","Low likelihood"],[Infinity,"bad","Psoriatik artrit olası — romatolojiye yönlendirin","Possible psoriatic arthritis — refer to rheumatology"]])};
+ }
+},
+
+/* ---- BMI ---- */
+{
+ id:"BMI",cat:"im",name:"BMI",
+ full:["Beden Kitle İndeksi","Body Mass Index"],
+ about:["Ağırlığın boy karesine oranı: BMI = ağırlık(kg) / boy(m)². DSÖ sınıflaması: <18.5 zayıf, 18.5–24.9 normal, 25–29.9 fazla kilolu, 30–34.9 obez I, 35–39.9 obez II, ≥40 obez III.",
+        "Weight relative to height squared: BMI = weight(kg) / height(m)². WHO classification: <18.5 underweight, 18.5–24.9 normal, 25–29.9 overweight, 30–34.9 obese I, 35–39.9 obese II, ≥40 obese III."],
+ form(){
+   return [blk(t("Ölçümler","Measurements"),[
+     num("wt",t("Ağırlık (kg)","Weight (kg)"),{max:400,step:0.1}),
+     num("ht",t("Boy (cm)","Height (cm)"),{max:260,step:0.1})
+   ],{cols:2})];
+ },
+ calc(v){
+   const w=+v("wt"),h=(+v("ht"))/100;
+   if(w<=0||h<=0)return{score:0,fmt:"—"};
+   const s=w/(h*h);
+   return {score:s,fmt:s.toFixed(1)+" kg/m²",
+     band:band(s,[[18.49,"warn","Zayıf","Underweight"],[24.99,"ok","Normal","Normal"],[29.99,"warn","Fazla kilolu","Overweight"],[34.99,"bad","Obez (sınıf I)","Obese (class I)"],[39.99,"bad","Obez (sınıf II)","Obese (class II)"],[Infinity,"bad","Obez (sınıf III)","Obese (class III)"]])};
+ }
+},
+
+/* ---- Creatinine Clearance (Cockcroft–Gault) ---- */
+{
+ id:"CrCl",cat:"im",name:"CrCl",
+ full:["Kreatinin Klirensi (Cockcroft–Gault)","Creatinine Clearance (Cockcroft–Gault)"],
+ about:["İlaç doz ayarlamasında yaygın kullanılan böbrek fonksiyonu tahmini. CrCl = [(140 − yaş) × ağırlık × (kadında 0.85)] / (72 × serum kreatinin). Sonuç mL/dk olarak verilir.",
+        "An estimate of renal function widely used for drug dose adjustment. CrCl = [(140 − age) × weight × (0.85 if female)] / (72 × serum creatinine). Result is in mL/min."],
+ form(){
+   return [blk(t("Hasta verileri","Patient data"),[
+     num("age",t("Yaş (yıl)","Age (years)"),{max:120}),
+     num("wt",t("Vücut ağırlığı (kg)","Body weight (kg)"),{max:400,step:0.1}),
+     sel("sex",t("Cinsiyet","Sex"),[["m",t("Erkek","Male")],["f",t("Kadın","Female")]]),
+     num("cr",t("Serum kreatinin (mg/dL)","Serum creatinine (mg/dL)"),{max:25,step:0.01})
+   ],{cols:2})];
+ },
+ calc(v){
+   const age=+v("age"),wt=+v("wt"),cr=+v("cr"),f=v("sex")==="f";
+   if(age<=0||wt<=0||cr<=0)return{score:0,fmt:"—"};
+   const s=((140-age)*wt*(f?0.85:1))/(72*cr);
+   return {score:s,fmt:s.toFixed(1)+t(" mL/dk"," mL/min"),
+     band:band(s,[[14.99,"bad","Böbrek yetmezliği","Kidney failure"],[29.99,"bad","Ağır azalma","Severely decreased"],[59.99,"warn","Orta azalma","Moderately decreased"],[89.99,"ok","Hafif azalma","Mildly decreased"],[Infinity,"ok","Normal","Normal"]])};
+ }
+},
+
+/* ---- eGFR (CKD-EPI 2021) ---- */
+{
+ id:"eGFR",cat:"im",name:"eGFR",
+ full:["Tahmini GFH (CKD-EPI 2021)","Estimated GFR (CKD-EPI 2021)"],
+ about:["Kronik böbrek hastalığını evrelemek için kullanılan 2021 ırktan bağımsız CKD-EPI kreatinin denklemi. Sonuç mL/dk/1.73m². KDIGO evreleri: G1 ≥90, G2 60–89, G3a 45–59, G3b 30–44, G4 15–29, G5 <15.",
+        "The 2021 race-free CKD-EPI creatinine equation used to stage chronic kidney disease. Result in mL/min/1.73m². KDIGO categories: G1 ≥90, G2 60–89, G3a 45–59, G3b 30–44, G4 15–29, G5 <15."],
+ form(){
+   return [blk(t("Hasta verileri","Patient data"),[
+     num("age",t("Yaş (yıl)","Age (years)"),{max:120}),
+     sel("sex",t("Cinsiyet","Sex"),[["m",t("Erkek","Male")],["f",t("Kadın","Female")]]),
+     num("cr",t("Serum kreatinin (mg/dL)","Serum creatinine (mg/dL)"),{max:25,step:0.01})
+   ])];
+ },
+ calc(v){
+   const age=+v("age"),cr=+v("cr"),f=v("sex")==="f";
+   if(age<=0||cr<=0)return{score:0,fmt:"—"};
+   const k=f?0.7:0.9,a=f?-0.241:-0.302;
+   const e=142*Math.pow(Math.min(cr/k,1),a)*Math.pow(Math.max(cr/k,1),-1.200)*Math.pow(0.9938,age)*(f?1.012:1);
+   return {score:e,fmt:Math.round(e)+t(" mL/dk/1.73m²"," mL/min/1.73m²"),
+     band:band(e,[[14.99,"bad","G5 — Böbrek yetmezliği","G5 — Kidney failure"],[29.99,"bad","G4 — Ağır azalma","G4 — Severely decreased"],[44.99,"warn","G3b — Orta-ağır azalma","G3b — Moderately-severely decreased"],[59.99,"warn","G3a — Hafif-orta azalma","G3a — Mildly-moderately decreased"],[89.99,"ok","G2 — Hafif azalma","G2 — Mildly decreased"],[Infinity,"ok","G1 — Normal / yüksek","G1 — Normal or high"]])};
+ }
+},
+
+/* ---- FIB-4 ---- */
+{
+ id:"FIB-4",cat:"im",name:"FIB-4",
+ full:["FIB-4 Karaciğer Fibrozis İndeksi","FIB-4 Liver Fibrosis Index"],
+ about:["Karaciğer hastalığında ileri fibrozisi noninvaziv değerlendiren indeks. FIB-4 = (yaş × AST) / (trombosit × √ALT). Yorum: <1.45 düşük risk, 1.45–3.25 belirsiz, >3.25 ileri fibrozis için yüksek risk.",
+        "A non-invasive index for advanced fibrosis in liver disease. FIB-4 = (age × AST) / (platelets × √ALT). Interpretation: <1.45 low risk, 1.45–3.25 indeterminate, >3.25 high risk for advanced fibrosis."],
+ form(){
+   return [blk(t("Laboratuvar","Laboratory"),[
+     num("age",t("Yaş (yıl)","Age (years)"),{max:120}),
+     num("ast",t("AST (U/L)","AST (U/L)"),{max:5000,step:0.1}),
+     num("alt",t("ALT (U/L)","ALT (U/L)"),{max:5000,step:0.1}),
+     num("plt",t("Trombosit (×10⁹/L)","Platelets (×10⁹/L)"),{max:1000,step:1})
+   ],{cols:2})];
+ },
+ calc(v){
+   const age=+v("age"),ast=+v("ast"),alt=+v("alt"),plt=+v("plt");
+   if(age<=0||ast<=0||alt<=0||plt<=0)return{score:0,fmt:"—"};
+   const s=(age*ast)/(plt*Math.sqrt(alt));
+   return {score:s,fmt:s.toFixed(2),
+     band:band(s,[[1.45,"ok","Düşük risk — ileri fibrozis olası değil","Low risk — advanced fibrosis unlikely"],[3.25,"warn","Belirsiz aralık","Indeterminate"],[Infinity,"bad","Yüksek risk — ileri fibrozis olası","High risk — advanced fibrosis likely"]])};
+ }
+},
+
+/* ---- APRI ---- */
+{
+ id:"APRI",cat:"im",name:"APRI",
+ full:["AST/Trombosit Oranı İndeksi","AST to Platelet Ratio Index"],
+ about:["Karaciğer fibrozisi/sirozu için noninvaziv belirteç. APRI = [(AST / AST üst sınırı) × 100] / trombosit. Yorum: <0.5 anlamlı fibrozis olası değil, >1.5 anlamlı fibrozis/siroz olası.",
+        "A non-invasive marker of liver fibrosis/cirrhosis. APRI = [(AST / AST upper limit) × 100] / platelets. Interpretation: <0.5 significant fibrosis unlikely, >1.5 significant fibrosis/cirrhosis likely."],
+ form(){
+   return [blk(t("Laboratuvar","Laboratory"),[
+     num("ast",t("AST (U/L)","AST (U/L)"),{max:5000,step:0.1}),
+     num("uln",t("AST üst normal sınırı (U/L)","AST upper limit of normal (U/L)"),{val:40,max:200,step:1}),
+     num("plt",t("Trombosit (×10⁹/L)","Platelets (×10⁹/L)"),{max:1000,step:1})
+   ])];
+ },
+ calc(v){
+   const ast=+v("ast"),uln=+v("uln"),plt=+v("plt");
+   if(ast<=0||uln<=0||plt<=0)return{score:0,fmt:"—"};
+   const s=((ast/uln)*100)/plt;
+   return {score:s,fmt:s.toFixed(2),
+     band:band(s,[[0.5,"ok","Anlamlı fibrozis olası değil","Significant fibrosis unlikely"],[1.5,"warn","Belirsiz aralık","Indeterminate"],[Infinity,"bad","Anlamlı fibrozis / siroz olası","Significant fibrosis / cirrhosis likely"]])};
+ }
+},
+
+/* ---- Corrected Calcium ---- */
+{
+ id:"CorrCa",cat:"im",name:"Ca²⁺ düz.",
+ full:["Albümine Göre Düzeltilmiş Kalsiyum","Albumin-Corrected Calcium"],
+ about:["Hipoalbüminemide ölçülen total kalsiyumu düzeltir: Düzeltilmiş Ca = ölçülen Ca + 0.8 × (4.0 − albümin). Değerler mg/dL ve g/dL. Normal aralık yaklaşık 8.5–10.5 mg/dL.",
+        "Corrects measured total calcium in hypoalbuminemia: corrected Ca = measured Ca + 0.8 × (4.0 − albumin). Values in mg/dL and g/dL. Normal range approximately 8.5–10.5 mg/dL."],
+ form(){
+   return [blk(t("Laboratuvar","Laboratory"),[
+     num("ca",t("Ölçülen total kalsiyum (mg/dL)","Measured total calcium (mg/dL)"),{max:20,step:0.1}),
+     num("alb",t("Serum albümin (g/dL)","Serum albumin (g/dL)"),{max:7,step:0.1})
+   ],{cols:2})];
+ },
+ calc(v){
+   const ca=+v("ca"),alb=+v("alb");
+   if(ca<=0||alb<=0)return{score:0,fmt:"—"};
+   const s=ca+0.8*(4.0-alb);
+   return {score:s,fmt:s.toFixed(2)+" mg/dL",
+     band:band(s,[[8.49,"warn","Hipokalsemi","Hypocalcemia"],[10.5,"ok","Normal aralık","Normal range"],[Infinity,"bad","Hiperkalsemi","Hypercalcemia"]])};
+ }
+},
+
+/* ---- CHA2DS2-VASc ---- */
+{
+ id:"CHA2DS2-VASc",cat:"im",name:"CHA₂DS₂-VASc",
+ full:["Atriyal Fibrilasyonda İnme Riski","Stroke Risk in Atrial Fibrillation"],
+ about:["Nonvalvüler atriyal fibrilasyonda inme/tromboemboli riskini öngörür (0–9). Oral antikoagülasyon genellikle skor ≥2 (erkek) veya ≥3 (kadın) olduğunda önerilir; skor arttıkça yıllık inme riski yükselir.",
+        "Predicts stroke/thromboembolism risk in non-valvular atrial fibrillation (0–9). Oral anticoagulation is generally recommended at a score ≥2 (men) or ≥3 (women); annual stroke risk rises with the score."],
+ range:"0–9",
+ form(){
+   const YN=[[0,t("Hayır","No")],[1,t("Evet","Yes")]];
+   return [blk(t("Risk faktörleri","Risk factors"),[
+     sel("age",t("Yaş","Age"),[[0,"< 65"],[1,"65–74"],[2,"≥ 75"]]),
+     sel("sex",t("Cinsiyet","Sex"),[[0,t("Erkek","Male")],[1,t("Kadın","Female")]]),
+     sel("chf",t("Konjestif kalp yetmezliği / SV disfonksiyonu","Congestive heart failure / LV dysfunction"),YN),
+     sel("htn",t("Hipertansiyon","Hypertension"),YN),
+     sel("dm",t("Diabetes mellitus","Diabetes mellitus"),YN),
+     sel("str",t("İnme / GİA / tromboemboli öyküsü","Prior stroke / TIA / thromboembolism"),YN),
+     sel("vas",t("Vasküler hastalık (Mİ, PAH, aort plağı)","Vascular disease (MI, PAD, aortic plaque)"),YN)
+   ])];
+ },
+ calc(v){
+   const s=(+v("age"))+(+v("sex"))+(+v("chf"))+(+v("htn"))+(+v("dm"))+2*(+v("str"))+(+v("vas"));
+   return {score:s,fmt:String(s),
+     band:band(s,[[0,"ok","Düşük risk","Low risk"],[1,"warn","Düşük-orta risk","Low-moderate risk"],[Infinity,"bad","Yüksek risk — antikoagülasyon düşünün","High risk — consider anticoagulation"]])};
+ }
+},
+
+/* ---- CURB-65 ---- */
+{
+ id:"CURB-65",cat:"im",name:"CURB-65",
+ full:["Toplum Kökenli Pnömoni Şiddeti","Community-Acquired Pneumonia Severity"],
+ about:["Toplum kökenli pnömonide şiddeti ve tedavi yerini belirlemeye yardımcı 5 ölçüt. Yorum: 0–1 düşük risk (ayaktan tedavi), 2 orta risk (yatış düşünün), 3–5 yüksek risk (hastane; yoğun bakım değerlendirin).",
+        "Five criteria that help determine severity and site of care in community-acquired pneumonia. Interpretation: 0–1 low risk (outpatient), 2 moderate risk (consider admission), 3–5 high risk (hospitalize; consider ICU)."],
+ range:"0–5",
+ form(){
+   const YN=[[0,t("Hayır","No")],[1,t("Evet","Yes")]];
+   return [blk(t("Ölçütler","Criteria"),[
+     sel("c",t("Konfüzyon (yeni bilinç bulanıklığı)","Confusion (new onset)"),YN),
+     sel("u",t("Üre > 7 mmol/L (BUN > 19 mg/dL)","Urea > 7 mmol/L (BUN > 19 mg/dL)"),YN),
+     sel("r",t("Solunum hızı ≥ 30/dk","Respiratory rate ≥ 30/min"),YN),
+     sel("b",t("Kan basıncı: SKB < 90 veya DKB ≤ 60 mmHg","Blood pressure: SBP < 90 or DBP ≤ 60 mmHg"),YN),
+     sel("a",t("Yaş ≥ 65","Age ≥ 65"),YN)
+   ])];
+ },
+ calc(v){
+   const s=(+v("c"))+(+v("u"))+(+v("r"))+(+v("b"))+(+v("a"));
+   return {score:s,fmt:String(s),
+     band:band(s,[[1,"ok","Düşük risk — ayaktan tedavi","Low risk — outpatient"],[2,"warn","Orta risk — yatış düşünün","Moderate risk — consider admission"],[Infinity,"bad","Yüksek risk — hastaneye yatış","High risk — hospitalize"]])};
+ }
+},
+
+/* ---- Child-Pugh ---- */
+{
+ id:"Child-Pugh",cat:"im",name:"Child-Pugh",
+ full:["Child-Pugh Karaciğer Sirozu Skoru","Child-Pugh Cirrhosis Score"],
+ about:["Karaciğer sirozunda hastalık şiddetini ve prognozu sınıflar. 5 parametre, her biri 1–3 puan; toplam 5–15. Sınıf A 5–6 (iyi), Sınıf B 7–9 (orta), Sınıf C 10–15 (kötü prognoz).",
+        "Classifies disease severity and prognosis in liver cirrhosis. Five parameters, each 1–3 points; total 5–15. Class A 5–6 (good), Class B 7–9 (moderate), Class C 10–15 (poor prognosis)."],
+ range:"5–15",
+ form(){
+   return [blk(t("Parametreler","Parameters"),[
+     sel("bil",t("Total bilirubin","Total bilirubin"),[[1,t("< 2 mg/dL","< 2 mg/dL")],[2,"2–3 mg/dL"],[3,t("> 3 mg/dL","> 3 mg/dL")]]),
+     sel("alb",t("Serum albümin","Serum albumin"),[[1,t("> 3.5 g/dL","> 3.5 g/dL")],[2,"2.8–3.5 g/dL"],[3,t("< 2.8 g/dL","< 2.8 g/dL")]]),
+     sel("inr",t("INR","INR"),[[1,"< 1.7"],[2,"1.7–2.3"],[3,"> 2.3"]]),
+     sel("asc",t("Asit","Ascites"),[[1,t("Yok","None")],[2,t("Hafif (medikal kontrollü)","Mild (medically controlled)")],[3,t("Orta-ağır","Moderate-severe")]]),
+     sel("enc",t("Hepatik ensefalopati","Hepatic encephalopathy"),[[1,t("Yok","None")],[2,t("Evre 1–2","Grade 1–2")],[3,t("Evre 3–4","Grade 3–4")]])
+   ])];
+ },
+ calc(v){
+   const s=(+v("bil"))+(+v("alb"))+(+v("inr"))+(+v("asc"))+(+v("enc"));
+   return {score:s,fmt:String(s),
+     band:band(s,[[6,"ok","Sınıf A","Class A"],[9,"warn","Sınıf B","Class B"],[Infinity,"bad","Sınıf C","Class C"]])};
+ }
+},
+
+/* ---- MELD-Na ---- */
+{
+ id:"MELD-Na",cat:"im",name:"MELD-Na",
+ full:["MELD-Na Karaciğer Hastalığı Skoru","MELD-Na End-Stage Liver Disease Score"],
+ about:["Son dönem karaciğer hastalığında kısa dönem mortaliteyi öngören ve transplantasyon önceliklendirmesinde kullanılan skor. Laboratuvar değerleri <1.0 ise 1.0 alınır; kreatinin en çok 4.0; sodyum 125–137 ile sınırlandırılır. Sonuç 6–40.",
+        "A score predicting short-term mortality in end-stage liver disease, used for transplant prioritization. Lab values <1.0 are set to 1.0; creatinine is capped at 4.0; sodium is bounded 125–137. Result 6–40."],
+ range:"6–40",
+ form(){
+   return [blk(t("Laboratuvar","Laboratory"),[
+     num("bil",t("Total bilirubin (mg/dL)","Total bilirubin (mg/dL)"),{max:80,step:0.1}),
+     num("inr",t("INR","INR"),{max:20,step:0.1}),
+     num("cr",t("Serum kreatinin (mg/dL)","Serum creatinine (mg/dL)"),{max:25,step:0.1}),
+     num("na",t("Serum sodyum (mmol/L)","Serum sodium (mmol/L)"),{val:137,min:100,max:170,step:1}),
+     sel("dial",t("Son 1 haftada ≥ 2 kez diyaliz","Dialysis ≥ 2× in the last week"),[[0,t("Hayır","No")],[1,t("Evet","Yes")]])
+   ],{cols:2})];
+ },
+ calc(v){
+   const rb=+v("bil"),ri=+v("inr"),rc=+v("cr"),rn=+v("na");
+   if(rb<=0||ri<=0||rc<=0||rn<=0)return{score:0,fmt:"—"};
+   let bil=Math.max(rb,1),inr=Math.max(ri,1),cr=Math.max(rc,1);
+   if(v("dial")==="1")cr=4;
+   cr=Math.min(cr,4);
+   let meld=Math.round(3.78*Math.log(bil)+11.2*Math.log(inr)+9.57*Math.log(cr)+6.43);
+   const na=clamp(rn,125,137);
+   let mn=meld;
+   if(meld>11)mn=meld+1.32*(137-na)-0.033*meld*(137-na);
+   mn=Math.round(clamp(mn,6,40));
+   return {score:mn,fmt:String(mn),
+     parts:[["MELD",String(meld)]],
+     band:band(mn,[[9,"ok","Düşük (3 ay mortalite ≈ %2)","Low (≈2% 3-mo mortality)"],[19,"warn","Orta (≈ %6)","Moderate (≈6%)"],[29,"bad","Yüksek (≈ %20)","High (≈20%)"],[Infinity,"bad","Çok yüksek (> %50)","Very high (>50%)"]])};
+ }
+},
+
+/*MORE*/
+];
+
+/* =====================================================================
+   ENGINE
+   ===================================================================== */
+const app=document.getElementById("app");
+const findCalc=id=>CALCS.find(c=>c.id===id);
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg;el.classList.add("show");
+  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2000);
+}
+
+/* ---------- render router ---------- */
+function render(){
+  document.documentElement.lang=state.lang;
+  document.getElementById("langBtn").textContent=state.lang==="tr"?"TR":"EN";
+  document.getElementById("themeBtn").textContent=state.theme==="dark"?"☾":"☀";
+  document.getElementById("disc").innerHTML=t(...UI.disc);
+  if(state.view==="detail"&&findCalc(state.calc))renderDetail();
+  else renderHome();
+  window.scrollTo(0,0);
+}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const searchFocused=document.activeElement&&document.activeElement.id==="q";
+  const q=state.query.trim().toLowerCase();
+  const cats=["all",...Object.keys(CATS).filter(k=>CALCS.some(c=>c.cat===k))];
+  const list=CALCS.filter(c=>{
+    if(state.cat!=="all"&&c.cat!==state.cat)return false;
+    if(!q)return true;
+    const hay=(c.name+" "+c.full.join(" ")+" "+CATS[c.cat].join(" ")).toLowerCase();
+    return hay.includes(q);
+  });
+  app.innerHTML=`
+    <div class="wrap">
+      <div class="hero">
+        <h1>DermaScores</h1>
+        <p>${esc(t(...UI.tagline))} · ${CALCS.length} ${t("hesaplayıcı","calculators")}</p>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input id="q" placeholder="${esc(t(...UI.search))}" value="${esc(state.query)}" autocomplete="off">
+      </div>
+      <div class="chips">
+        ${cats.map(k=>`<button class="chip ${state.cat===k?"on":""}" data-cat="${k}">${
+          k==="all"?esc(t(...UI.all)):esc(t(CATS[k][0],CATS[k][1]))}</button>`).join("")}
+      </div>
+      ${list.length?`<div class="grid">${list.map(cardHTML).join("")}</div>`
+        :`<div class="empty">${esc(t(...UI.none))}</div>`}
+    </div>`;
+
+  const qi=document.getElementById("q");
+  qi.oninput=()=>{state.query=qi.value;renderHome();};
+  qi.onkeydown=e=>{if(e.key==="Enter")qi.blur();};
+  if(searchFocused){qi.focus();const p=qi.value.length;qi.setSelectionRange(p,p);}
+  app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;renderHome();});
+  app.querySelectorAll(".ccard").forEach(b=>b.onclick=()=>openCalc(b.dataset.id));
+}
+function cardHTML(c){
+  const col=CATS[c.cat][2];
+  return `<button class="ccard" data-id="${c.id}" style="--cc:${col}">
+    <span class="ab">${esc(c.name)}</span>
+    <span class="fn">${esc(t(...c.full))}</span>
+    <span class="tg">${esc(t(CATS[c.cat][0],CATS[c.cat][1]))}</span>
+  </button>`;
+}
+function openCalc(id){state.view="detail";state.calc=id;render();}
+function goHome(){state.view="home";state.calc=null;render();}
+
+/* ---------- detail ---------- */
+function renderDetail(){
+  const c=findCalc(state.calc),col=CATS[c.cat][2];
+  const blocks=c.form()||[];
+  app.innerHTML=`
+    <div class="wrap" style="--cc:${col}">
+      <button class="back" id="back">‹ ${esc(t(...UI.back))}</button>
+      <div class="dhead">
+        <h1>${esc(c.name)} <span class="tg">${esc(t(CATS[c.cat][0],CATS[c.cat][1]))}</span></h1>
+        <div class="dfull">${esc(t(...c.full))}</div>
+        <details class="about">
+          <summary>${esc(t(...UI.about))}</summary>
+          <div class="ab-body">${esc(t(...c.about))}
+            ${c.range?`<div class="rg">${esc(t(...UI.range))}: ${esc(c.range)}</div>`:""}</div>
+        </details>
+      </div>
+      <div class="ptrow"><input id="ptName" placeholder="${esc(t(...UI.patient))}" autocomplete="off"></div>
+      <form id="calcForm" class="blocks">${blocks.map(blockHTML).join("")}</form>
+      <div class="resultbar">
+        <div class="rb-score">
+          <span class="lb">${esc(t(...UI.score))}</span>
+          <span class="vl" id="scoreVal">0</span>
+        </div>
+        <div class="rb-mid">
+          <span class="pill b-info" id="bandPill" style="display:none"></span>
+          <div class="parts" id="parts"></div>
+        </div>
+        <div class="rb-act">
+          <button class="actbtn" id="resetBtn" title="${esc(t(...UI.reset))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/></svg></button>
+          <button class="actbtn" id="copyBtn" title="${esc(t(...UI.copy))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M6 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V6"/></svg></button>
+          <button class="actbtn primary" id="printBtn" title="${esc(t(...UI.print))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 17H3v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6h-3"/></svg></button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById("back").onclick=goHome;
+  const form=document.getElementById("calcForm");
+  form.addEventListener("input",e=>{
+    const id=e.target.dataset.id;
+    if(id){const o=form.querySelector(`[data-out="${id}"]`);if(o)o.textContent=e.target.value;}
+    update();
+  });
+  document.getElementById("resetBtn").onclick=()=>{renderDetail();toast(t(...UI.cleared));};
+  document.getElementById("copyBtn").onclick=copyResult;
+  document.getElementById("printBtn").onclick=printResult;
+  update();
+}
+
+function blockHTML(b){
+  const cls="block"+(b.full?" full":"");
+  let h=`<div class="${cls}">`;
+  if(b.title)h+=`<div class="bt">${esc(b.title)}</div>`;
+  if(b.note)h+=`<div class="bn">${esc(b.note)}</div>`;
+  if(b.items&&b.items.length){
+    const c=b.cols===3?" c3":b.cols===2?" c2":"";
+    h+=`<div class="fields${c}">${b.items.map(itemHTML).join("")}</div>`;
+  }
+  return h+`</div>`;
+}
+function itemHTML(it){
+  if(it.type==="sel"){
+    const opts=it.opts.map(o=>{const[val,lbl]=Array.isArray(o)?o:[o,o];
+      return `<option value="${esc(val)}"${String(val)===String(it.val)?" selected":""}>${esc(lbl)}</option>`;}).join("");
+    return `<label class="fld"><span>${esc(it.label)}</span>
+      <select data-id="${it.id}">${opts}</select>
+      ${it.hint?`<small>${esc(it.hint)}</small>`:""}</label>`;
+  }
+  if(it.type==="rng"){
+    return `<label class="fld"><span>${esc(it.label)}: <b data-out="${it.id}">${it.val}</b></span>
+      <input type="range" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}"></label>`;
+  }
+  return `<label class="fld"><span>${esc(it.label)}</span>
+    <input type="number" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}" inputmode="decimal">
+    ${it.hint?`<small>${esc(it.hint)}</small>`:""}</label>`;
+}
+
+/* read a field value */
+function fieldVal(id){
+  const e=document.querySelector(`#calcForm [data-id="${id}"]`);
+  return e?e.value:"0";
+}
+
+/* ---------- compute & paint ---------- */
+function update(){
+  const c=findCalc(state.calc);
+  let r;
+  try{r=c.calc(fieldVal)||{};}catch(err){r={score:0};}
+  document.getElementById("scoreVal").textContent=r.fmt!==undefined?r.fmt:r.score;
+  const bp=document.getElementById("bandPill");
+  if(r.band){bp.style.display="";bp.textContent=r.band.txt;bp.className="pill b-"+r.band.cls;}
+  else bp.style.display="none";
+  const pe=document.getElementById("parts");
+  pe.innerHTML=(r.parts||[]).map(p=>`<span>${esc(p[0])}: <b>${esc(p[1])}</b></span>`).join("");
+  update._last=r;
+}
+
+/* gather labelled values from the form for report/copy */
+function gatherInputs(){
+  const rows=[];
+  document.querySelectorAll("#calcForm .block").forEach(blk=>{
+    const sec=blk.querySelector(".bt");
+    const flds=[...blk.querySelectorAll(".fld")];
+    if(!flds.length)return;
+    rows.push({sec:sec?sec.textContent:"",fields:flds.map(f=>{
+      const ctrl=f.querySelector("[data-id]");
+      let lbl=f.querySelector("span").textContent.trim();
+      let val="";
+      if(ctrl.tagName==="SELECT")val=ctrl.options[ctrl.selectedIndex].textContent;
+      else val=ctrl.value;
+      lbl=lbl.replace(/:\s*[\d.]+$/,"");
+      return[lbl,val];
+    })});
+  });
+  return rows;
+}
+
+function resultText(){
+  const c=findCalc(state.calc),r=update._last||{};
+  const pt=document.getElementById("ptName").value.trim();
+  let s=`DermaScores — ${c.name} (${t(...c.full)})\n`;
+  if(pt)s+=`${t("Hasta","Patient")}: ${pt}\n`;
+  s+=`${t(...UI.date)}: ${new Date().toLocaleString()}\n\n`;
+  gatherInputs().forEach(g=>{
+    if(g.sec)s+=`[${g.sec}]\n`;
+    g.fields.forEach(f=>s+=`  ${f[0]}: ${f[1]}\n`);
+  });
+  s+=`\n${t(...UI.result)}: ${r.fmt!==undefined?r.fmt:r.score}`;
+  if(c.range)s+=`  (${t(...UI.range)} ${c.range})`;
+  if(r.band)s+=`\n${t(...UI.interp)}: ${r.band.txt}`;
+  if(r.parts&&r.parts.length)s+=`\n${r.parts.map(p=>p[0]+": "+p[1]).join("  ·  ")}`;
+  return s;
+}
+
+function copyResult(){
+  const txt=resultText();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast(t(...UI.copied)),()=>fallbackCopy(txt));
+  }else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement("textarea");ta.value=txt;
+  ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);
+  ta.select();try{document.execCommand("copy");toast(t(...UI.copied));}catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ---------- print report ---------- */
+function printResult(){
+  const c=findCalc(state.calc),r=update._last||{};
+  const pt=document.getElementById("ptName").value.trim();
+  let rows="";
+  gatherInputs().forEach(g=>{
+    if(g.sec)rows+=`<tr><td class="pr-sec" colspan="2">${esc(g.sec)}</td></tr>`;
+    g.fields.forEach(f=>rows+=`<tr><td>${esc(f[0])}</td><td>${esc(f[1])}</td></tr>`);
+  });
+  document.getElementById("printArea").innerHTML=`
+    <div class="pr-h">
+      <div class="t">DermaScores</div>
+      <div style="text-align:right;font-size:12px">${esc(t(...UI.reportTitle))}</div>
+    </div>
+    <div class="pr-meta">
+      <b>${esc(c.name)}</b> — ${esc(t(...c.full))}<br>
+      ${pt?t("Hasta","Patient")+": "+esc(pt)+"<br>":""}
+      ${esc(t(...UI.date))}: ${esc(new Date().toLocaleString())}
+    </div>
+    <table class="pr-tbl">${rows}</table>
+    <div class="pr-score">
+      ${esc(t(...UI.result))}: ${esc(r.fmt!==undefined?r.fmt:r.score)}${c.range?"  ·  "+esc(t(...UI.range))+" "+esc(c.range):""}
+      ${r.band?"<br>"+esc(t(...UI.interp))+": "+esc(r.band.txt):""}
+      ${r.parts&&r.parts.length?'<br><span style="font-size:12px;font-weight:600">'+r.parts.map(p=>esc(p[0]+": "+p[1])).join("  ·  ")+'</span>':""}
+    </div>
+    <div class="pr-disc">${t(...UI.disc).replace(/<\/?b>/g,"")}</div>`;
+  window.print();
+}
+
+/* ---------- header controls ---------- */
+document.getElementById("brand").onclick=goHome;
+document.getElementById("langBtn").onclick=()=>{state.lang=state.lang==="tr"?"en":"tr";render();};
+document.getElementById("themeBtn").onclick=()=>{
+  state.theme=state.theme==="dark"?"light":"dark";
+  document.body.classList.toggle("light",state.theme==="light");
+  document.querySelector('meta[name=theme-color]').content=state.theme==="dark"?"#0b1018":"#eef1f6";
+  render();
+};
+
+/* ---------- start ---------- */
+render();
+</script>
+</body>
+</html>
