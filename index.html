@@ -103,6 +103,8 @@ header{
   padding:3px 8px;border-radius:6px;color:var(--cc,var(--accent));
   background:color-mix(in srgb,var(--cc,var(--accent)) 16%,transparent);
 }
+/* which published criteria sets a disease card offers */
+.ccard .sets{font-size:11px;color:var(--faint);line-height:1.4;margin-top:-2px}
 .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:15px}
 
 /* ---------- Detail ---------- */
@@ -283,8 +285,36 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
 .crit-refs{margin-top:14px;font-size:11.5px;color:var(--faint);line-height:1.6}
 .crit-setname{font-size:12.5px;color:var(--muted);margin-top:2px}
 
+/* criteria-set tabs (a disease may offer several published criteria sets) */
+.crit-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+.crit-tab{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer}
+.crit-tab.on{background:var(--cc,var(--accent));border-color:transparent;color:#0b1018}
+
+.crit-note{margin-top:8px;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.5;
+  color:var(--muted);background:color-mix(in srgb,var(--accent) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 22%,transparent)}
+
+/* dropdown criteria (ALDEN / RegiSCAR style graded items) */
+.crit-item.choice{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+.crit-item.choice .cl{font-size:14px;line-height:1.4;font-weight:600}
+.crit-item.choice select{width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg);color:var(--text);font:inherit;font-size:13.5px}
+.crit-hint{display:block;color:var(--muted);font-size:12px;margin-top:2px;font-weight:400}
+
+/* hand-off to calculators that already exist in the Scores section */
+.crit-related{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.crit-related h4{font-size:13px;font-weight:750;margin-bottom:9px}
+.crit-related h4 small{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
+.crit-related .rl{display:flex;flex-wrap:wrap;gap:8px}
+.relbtn{display:flex;flex-direction:column;gap:2px;text-align:left;padding:9px 13px;border-radius:10px;
+  border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:13px;
+  font-weight:750;cursor:pointer}
+.relbtn:hover{border-color:var(--cc,var(--accent))}
+.relbtn span{font-size:11.5px;font-weight:400;color:var(--muted)}
+
 @media print{
-  .crit-banner,.sec-toggle{display:none!important}
+  .crit-banner,.sec-toggle,.crit-tabs,.crit-related{display:none!important}
   .pr-crit-groups{margin:10px 0}
   .pr-crit-g{font-weight:800;font-size:12px;margin:8px 0 3px}
   .pr-crit-item{font-size:11.5px;padding:2px 0}
@@ -372,8 +402,9 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
 
 /* ---------- state ---------- */
 const state={lang:"tr",theme:"dark",section:"calc",view:"home",calc:null,query:"",cat:"all",
-             critView:"home",critId:null,critQuery:"",critCat:"all"};
-let critChecked=new Set();
+             critView:"home",critId:null,critQuery:"",critCat:"all",critSet:0};
+let critChecked=new Set();   /* ids of ticked checkbox criteria */
+let critChoice={};           /* id -> selected option index, for type:"choice" criteria */
 
 /* ---------- i18n helper ---------- */
 const t=(tr,en)=>state.lang==="tr"?tr:en;
@@ -425,7 +456,10 @@ const CRIT_UI={
   print:["PDF / Yazdır","PDF / Print"],
   reportTitle:["Tanı Kriterleri Değerlendirme Raporu","Diagnostic Criteria Assessment Report"],
   none:["Sonuç bulunamadı","No results found"],
-  all:["Tümü","All"]
+  all:["Tümü","All"],
+  relatedCalcs:["İlgili skorlar","Related scores"],
+  relatedHint:["Bu araçlar Skorlar bölümünde hazır — tıklayınca oraya geçer","These tools live in the Calculators section — click to jump there"],
+  mandatoryMissing:["Zorunlu kriter işaretlenmedi","Mandatory criterion not ticked"]
 };
 
 /* ---------- categories ---------- */
@@ -453,7 +487,9 @@ const CRIT_CATS={
   bulld:["Büllöz","Bullous","#fbbf24"],
   drug :["Ciddi ilaç reaksiyonu","Severe drug reaction","#dc2626"],
   peds :["Pediatrik vaskülit","Pediatric vasculitis","#22d3ee"],
-  hsx  :["Hidradenitis","Hidradenitis","#f472b6"]
+  hsx  :["Hidradenitis","Hidradenitis","#f472b6"],
+  ecz  :["Egzama","Eczema","#34d8c4"],
+  arth :["Artropati","Arthropathy","#818cf8"]
 };
 
 /* ---------- builders & math helpers ---------- */
@@ -1441,7 +1477,8 @@ const CRITERIA=[
  id:"sweet",cat:"neut",
  name:{tr:"Sweet Sendromu",en:"Sweet Syndrome"},
  full:["Sweet Sendromu (Akut Febril Nötrofilik Dermatoz)","Sweet Syndrome (Acute Febrile Neutrophilic Dermatosis)"],
- criteriaSet:{
+ sets:[{
+   key:"vdd",tab:["Klasik (von den Driesch)","Classic (von den Driesch)"],
    name:"von den Driesch (revize)",year:1994,
    scoringType:"major-minor",
    groups:[
@@ -1465,6 +1502,30 @@ const CRITERIA=[
       ]}
    ]
  },
+ {
+   key:"walker",tab:["İlaç ilişkili (Walker-Cohen)","Drug-induced (Walker-Cohen)"],
+   name:"Walker & Cohen (1996)",year:1996,
+   applicabilityNote:["İlaç ilişkili Sweet sendromu alt tipi içindir; klasik/malignite ilişkili Sweet sendromunda von den Driesch kriterleri kullanılır. Tanı için beş kriterin tamamı gereklidir.",
+                      "Applies to the drug-induced subtype of Sweet syndrome; classical/malignancy-associated Sweet syndrome uses the von den Driesch criteria. All five criteria are required for diagnosis."],
+   scoringType:"major-minor",
+   groups:[
+     {key:"all",label:["Walker-Cohen kriterleri — beşinin de karşılanması gerekir","Walker & Cohen criteria — all five must be met"],
+      short:["Kriterler","Criteria"],need:5,
+      items:[
+        {id:"wc_1",label:["Ağrılı eritematöz plak veya nodüllerin ani başlangıcı",
+                           "Abrupt onset of painful erythematous plaques or nodules"]},
+        {id:"wc_2",label:["Histopatolojide lökositoklastik vaskülit bulgusu olmaksızın yoğun nötrofilik infiltrasyon",
+                           "Histopathologic evidence of a dense neutrophilic infiltrate without evidence of leukocytoclastic vasculitis"]},
+        {id:"wc_3",label:["Ateş (pireksi) >38°C","Pyrexia >38°C"]},
+        {id:"wc_4",label:["İlaç alımı ile klinik tablo arasında zamansal ilişki VEYA oral yeniden maruziyet (rechallenge) sonrası zamansal ilişkili nüks",
+                           "Temporal relationship between drug ingestion and clinical presentation, or temporally related recurrence after oral challenge"],
+                   hint:["İlaç başlangıcı ile lezyon çıkışı arasındaki latans aylar-yıllar olabilir; zamansal ilişki her zaman kısa değildir",
+                          "Latency between drug initiation and lesion onset may be months to years; the temporal relationship is not always short"]},
+        {id:"wc_5",label:["İlacın kesilmesi veya sistemik kortikosteroid tedavisi sonrası lezyonların zamansal ilişkili gerilemesi",
+                           "Temporally related resolution of lesions after drug withdrawal or treatment with systemic corticosteroids"]}
+      ]}
+   ]
+ }],
  differentials:[
    ["Piyoderma gangrenozum","Pyoderma gangrenosum"],
    ["Eritema nodozum","Erythema nodosum"],
@@ -1502,8 +1563,11 @@ const CRITERIA=[
  id:"behcet",cat:"vasc",
  name:{tr:"Behçet Hastalığı",en:"Behçet's Disease"},
  full:["Behçet Hastalığı","Behçet's Disease"],
- criteriaSet:{
+ sets:[{
+   key:"icbd",tab:["ICBD 2014","ICBD 2014"],
    name:"ICBD 2014 (International Criteria for Behçet's Disease)",year:2014,
+   applicabilityNote:["ISG 1990'a göre daha duyarlı, daha az özgüldür; sınıflandırma amaçlıdır.",
+                      "More sensitive but less specific than ISG 1990; intended for classification."],
    scoringType:"points-threshold",
    threshold:4,
    items:[
@@ -1518,6 +1582,32 @@ const CRITERIA=[
      {id:"pathergy",label:["Pozitif paterji testi (yalnızca test uygulandıysa işaretleyin)","Positive pathergy test (check only if the test was performed)"],points:1,optional:true}
    ]
  },
+ {
+   key:"isg",tab:["ISG 1990","ISG 1990"],
+   name:"International Study Group for Behçet's Disease (ISG, 1990)",year:1990,
+   applicabilityNote:["Sınıflandırma kriteridir, tanı kriteri değildir. ICBD 2014'e kıyasla daha özgül ancak daha az duyarlıdır; oral aft yokluğunda hastalığı dışlamaz. Bulgular yalnızca başka bir klinik açıklama bulunmadığında değerlendirilir.",
+                      "A classification criterion, not a diagnostic criterion. More specific but less sensitive than ICBD 2014; it does not exclude disease in the absence of oral aphthosis. Findings are applicable only in the absence of other clinical explanations."],
+   scoringType:"mandatory-plus-n",
+   mandatory:{label:["Zorunlu kriter","Mandatory criterion"],short:["Zorunlu","Mandatory"],
+     items:[
+       {id:"isg_oral",label:["Tekrarlayan oral ülserasyon — hekim veya hasta tarafından gözlenen minör aftöz, majör aftöz ya da herpetiform ülserasyon; 12 aylık bir dönemde en az 3 kez tekrarlamış",
+                              "Recurrent oral ulceration — minor aphthous, major aphthous, or herpetiform ulceration observed by physician or patient, recurring at least 3 times in one 12-month period"]}
+     ]},
+   additional:{label:["Ek kriterler — en az 2'si gerekli","Additional criteria — at least 2 required"],
+     short:["Ek","Additional"],need:2,
+     items:[
+       {id:"isg_genital",label:["Tekrarlayan genital ülserasyon — hekim veya hasta tarafından gözlenen aftöz ülserasyon ya da skar",
+                                 "Recurrent genital ulceration — aphthous ulceration or scarring observed by physician or patient"]},
+       {id:"isg_eye",label:["Göz lezyonları — anterior üveit, posterior üveit veya biyomikroskopik muayenede vitreusta hücre; ya da oftalmolog tarafından saptanan retinal vaskülit",
+                             "Eye lesions — anterior uveitis, posterior uveitis, or cells in the vitreous on slit-lamp examination; or retinal vasculitis observed by an ophthalmologist"]},
+       {id:"isg_skin",label:["Cilt lezyonları — hekim veya hasta tarafından gözlenen eritema nodozum, psödofolikülit ya da papülopüstüler lezyonlar; veya kortikosteroid almayan post-adölesan hastalarda hekim tarafından gözlenen akneiform nodüller",
+                              "Skin lesions — erythema nodosum observed by physician or patient, pseudofolliculitis, or papulopustular lesions; or acneiform nodules observed by physician in post-adolescent patients not on corticosteroid treatment"]},
+       {id:"isg_pathergy",label:["Pozitif paterji testi — hekim tarafından 24-48. saatte değerlendirilmiş",
+                                  "Positive pathergy test — read by physician at 24-48 hours"],
+         hint:["Steril iğne batırma sonrası gelişen steril eritematöz papül/püstül pozitif kabul edilir",
+                "A sterile erythematous papule/pustule developing after a sterile needle prick is considered positive"]}
+     ]}
+ }],
  differentials:[
    ["Basit tekrarlayan aftöz stomatit","Simple recurrent aphthous stomatitis"],
    ["Reaktif artrit / seronegatif spondiloartropati","Reactive arthritis / seronegative spondyloarthropathy"],
@@ -1550,7 +1640,770 @@ const CRITERIA=[
  },
  references:["International Team for the Revision of the International Criteria for Behçet's Disease (ICBD). International Criteria for Behçet's Disease (ICBD): a collaborative study of 27 countries on the sensitivity and specificity of the new criteria. J Eur Acad Dermatol Venereol. 2014;28(3):338-347."]
 }
+,
 
+/* ---- pg ---- */
+{
+ id:"pg",cat:"neut",
+ name:{tr:"Piyoderma Gangrenozum",en:"Pyoderma Gangrenosum"},
+ full:["Piyoderma Gangrenozum","Pyoderma Gangrenosum"],
+ sets:[
+
+  /* ---- Su et al. 2004 ---- */
+  {
+   key:"su",
+   tab:["Su 2004","Su 2004"],
+   name:"Su et al. (2004)",
+   year:2004,
+   applicabilityNote:["Uzman görüşüne dayalı, valide edilmemiş tanı kriterleridir; dışlama tanısı mantığına dayanır (major kriterlerden biri diğer ülser nedenlerinin dışlanmasıdır).",
+                      "Expert-opinion, non-validated diagnostic criteria; built on a diagnosis-of-exclusion logic (one major criterion is exclusion of other causes of ulceration)."],
+   scoringType:"major-minor",
+   groups:[
+     {key:"major",label:["Major kriterler — ikisi de gerekli","Major criteria — both required"],short:["Major","Major"],need:2,
+      items:[
+        {id:"su_m1",label:["Ağrılı, nekrolitik kutanöz ülserin hızlı progresyonu; düzensiz, violase ve oyuk (undermine) kenarlı",
+                            "Rapid progression of a painful, necrolytic cutaneous ulcer with an irregular, violaceous, and undermined border"]},
+        {id:"su_m2",label:["Kutanöz ülserasyonun diğer nedenlerinin dışlanmış olması",
+                            "Other causes of cutaneous ulceration have been excluded"],
+                     hint:["Vasküler yetmezlik, vaskülit, enfeksiyon, malignite, kalsifilaksi, ekzojen doku hasarı vb.",
+                           "Vascular insufficiency, vasculitis, infection, malignancy, calciphylaxis, exogenous tissue injury, etc."]}
+      ]},
+     {key:"minor",label:["Minor kriterler — en az 2/4 gerekli","Minor criteria — at least 2 of 4 required"],short:["Minor","Minor"],need:2,
+      items:[
+        {id:"su_n1",label:["Paterji düşündüren öykü VEYA kribriform skar klinik bulgusu",
+                            "History suggestive of pathergy or clinical finding of cribriform scarring"]},
+        {id:"su_n2",label:["Piyoderma gangrenozum ile ilişkili sistemik hastalıklar",
+                            "Systemic diseases associated with pyoderma gangrenosum"],
+                     hint:["İnflamatuar bağırsak hastalığı, inflamatuar artrit, monoklonal gamopati (IgA), hematolojik malignite",
+                           "Inflammatory bowel disease, inflammatory arthritis, monoclonal gammopathy (IgA), haematological malignancy"]},
+        {id:"su_n3",label:["Histopatolojik bulgular (steril dermal nötrofili, ± mikst inflamasyon, ± lenfositik vaskülit)",
+                            "Histopathologic findings (sterile dermal neutrophilia, ± mixed inflammation, ± lymphocytic vasculitis)"]},
+        {id:"su_n4",label:["Tedavi yanıtı (sistemik steroid tedavisine hızlı yanıt)",
+                            "Treatment response (rapid response to systemic steroid treatment)"]}
+      ]}
+   ]
+  },
+
+  /* ---- Maverakis et al. 2018 Delphi consensus ---- */
+  {
+   key:"delphi",
+   tab:["Delphi 2018","Delphi 2018"],
+   name:"Maverakis et al. — Delphi Consensus (2018)",
+   year:2018,
+   applicabilityNote:["Yalnızca ülseratif (klasik) piyoderma gangrenozum için geliştirilmiştir; büllöz, püstüler, vejetatif ve peristomal alt tiplerde valide değildir. Major kriter zorunlu olduğundan ülser kenarından biyopsi gerektirir.",
+                      "Developed for ulcerative (classic) pyoderma gangrenosum only; not validated for bullous, pustular, vegetative or peristomal subtypes. Requires a biopsy of the ulcer edge, as the major criterion is mandatory."],
+   scoringType:"mandatory-plus-n",
+   mandatory:{label:["Major kriter — zorunlu","Major criterion — mandatory"],short:["Zorunlu","Mandatory"],
+     items:[
+       {id:"del_m1",label:["Ülser kenarından alınan biyopside nötrofilik infiltrasyon gösterilmesi",
+                            "Biopsy of ulcer edge demonstrating neutrophilic infiltrate"]}
+     ]},
+   additional:{label:["Minor kriterler — en az 4/8 gerekli","Minor criteria — at least 4 of 8 required"],short:["Minor","Minor"],need:4,
+     items:[
+       {id:"del_n1",label:["Enfeksiyonun dışlanması","Exclusion of infection"]},
+       {id:"del_n2",label:["Paterji","Pathergy"]},
+       {id:"del_n3",label:["İnflamatuar bağırsak hastalığı veya inflamatuar artrit öyküsü",
+                            "History of inflammatory bowel disease or inflammatory arthritis"]},
+       {id:"del_n4",label:["Ortaya çıkışından sonraki 4 gün içinde ülsere olan papül, püstül veya vezikül öyküsü",
+                            "History of papule, pustule, or vesicle ulcerating within 4 days of appearing"]},
+       {id:"del_n5",label:["Ülserasyon bölgesinde periferik eritem, oyuk (undermine) kenar ve hassasiyet",
+                            "Peripheral erythema, undermining border, and tenderness at ulceration site"]},
+       {id:"del_n6",label:["Multipl ülserasyon; en az 1'i ön bacak yüzünde","Multiple ulcerations, at least 1 on an anterior lower leg"]},
+       {id:"del_n7",label:["İyileşmiş ülser bölgelerinde kribriform veya \"buruşuk kağıt\" görünümlü skar(lar)",
+                            "Cribriform or \"wrinkled paper\" scar(s) at healed ulcer sites"]},
+       {id:"del_n8",label:["İmmünosupresif ilaç(lar)ın başlanmasından sonraki 1 ay içinde ülser boyutunda azalma",
+                            "Decreased ulcer size within 1 month of initiating immunosuppressive medication(s)"]}
+     ]}
+  },
+
+  /* ---- PARACELSUS score ---- */
+  {
+   key:"paracelsus",
+   tab:["PARACELSUS","PARACELSUS"],
+   name:"PARACELSUS Score — Jockenhöfer et al. (2019)",
+   year:2019,
+   applicabilityNote:["Kriterlerin baş harfleri PARACELSUS akronimini oluşturur. Toplam 20 puan üzerinden ≥10 puan PG olasılığını güçlü şekilde destekler; özellikle venöz bacak ülseri ayrımı için geliştirilmiş ve valide edilmiştir.",
+                      "The initial letters of the criteria form the acronym PARACELSUS. A total of ≥10 of 20 possible points strongly suggests PG; developed and validated particularly to discriminate PG from venous leg ulcers."],
+   scoringType:"points-threshold",
+   threshold:10,
+   items:[
+     {id:"par_p", label:["Progresif hastalık seyri (hızla ilerleyen hastalık) — major","Progressive disease course (rapidly progressing disease) — major"],points:3},
+     {id:"par_a1",label:["İlgili ayırıcı tanıların değerlendirilmiş/dışlanmış olması — major","Assessment of relevant differential diagnoses — major"],points:3},
+     {id:"par_r", label:["Kırmızı-violase yara kenarı — major","Reddish-violaceous wound border — major"],points:3},
+     {id:"par_a2",label:["İmmünosupresif ilaçlarla düzelme — minor","Amelioration by immunosuppressant drugs — minor"],points:2},
+     {id:"par_c", label:["Karakteristik olarak düzensiz (bizar) ülser şekli — minor","Characteristically irregular (bizarre) shape of ulceration — minor"],points:2},
+     {id:"par_e", label:["Aşırı ağrı (görsel analog skalada >4/10) — minor","Extreme pain (>4/10 on a visual analogue scale) — minor"],points:2},
+     {id:"par_l", label:["Lezyonun travma bölgesinde yerleşmesi (paterji) — minor","Localization of the lesion at the site of trauma — minor"],points:2},
+     {id:"par_s1",label:["Histopatolojide süpüratif inflamasyon — ek kriter","Suppurative inflammation in histopathology — additional"],points:1},
+     {id:"par_u", label:["Oyuk (undermine) yara kenarı — ek kriter","Undermined wound border — additional"],points:1},
+     {id:"par_s2",label:["İlişkili sistemik hastalık — ek kriter","Associated systemic disease — additional"],points:1}
+   ]
+  }
+
+ ],
+ differentials:[
+   ["Venöz / arteriyel bacak ülseri","Venous / arterial leg ulcer"],
+   ["Kutanöz enfeksiyon (nekrotizan fasiit, derin mikoz, atipik mikobakteri, ektima gangrenozum)","Cutaneous infection (necrotizing fasciitis, deep fungal, atypical mycobacteria, ecthyma gangrenosum)"],
+   ["Vaskülit ve vaskülopatiler (ANCA-ilişkili vaskülit, livedoid vaskülopati, antifosfolipid sendromu)","Vasculitis and vasculopathies (ANCA-associated vasculitis, livedoid vasculopathy, antiphospholipid syndrome)"],
+   ["Kalsifilaksi","Calciphylaxis"],
+   ["Kutanöz malignite (skuamöz hücreli karsinom, kutanöz lenfoma)","Cutaneous malignancy (squamous cell carcinoma, cutaneous lymphoma)"],
+   ["Faktisyel ülser / ekzojen doku hasarı","Factitial ulcer / exogenous tissue injury"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Ülser kenarından insizyonel biyopsi: histopatoloji + doku kültürü (bakteri, mikobakteri, mantar)","Incisional biopsy from ulcer edge: histopathology + tissue culture (bacterial, mycobacterial, fungal)"],
+     ["Tam kan sayımı, CRP/ESR, biyokimya, serum protein elektroforezi + immünfiksasyon (IgA monoklonal gamopati)","CBC, CRP/ESR, biochemistry, serum protein electrophoresis + immunofixation (IgA monoclonal gammopathy)"],
+     ["Vaskülit/tromboz taraması: ANCA, ANA, antifosfolipid antikorları, kriyoglobulin","Vasculitis/thrombosis screen: ANCA, ANA, antiphospholipid antibodies, cryoglobulins"],
+     ["Damarsal değerlendirme: ayak bileği-kol indeksi, venöz Doppler","Vascular assessment: ankle-brachial index, venous Doppler"],
+     ["İnflamatuar bağırsak hastalığı ve hematolojik malignite taraması (semptom varlığında kolonoskopi)","Screen for inflammatory bowel disease and haematological malignancy (colonoscopy if symptomatic)"]
+   ],
+   treatmentOrientation:[
+     ["Sistemik kortikosteroid veya siklosporin ilk basamak sistemik seçeneklerdir","Systemic corticosteroids or ciclosporin are first-line systemic options"],
+     ["Dirençli/steroid-bağımlı olguda biyolojik ajanlar (TNF inhibitörleri), özellikle inflamatuar bağırsak hastalığı eşlik ediyorsa","Biologics (TNF inhibitors) in refractory/steroid-dependent disease, especially with concomitant inflammatory bowel disease"],
+     ["Sınırlı hastalıkta topikal/intralezyonel kortikosteroid veya topikal kalsinörin inhibitörü","Topical/intralesional corticosteroids or topical calcineurin inhibitors in limited disease"],
+     ["Yara bakımı ve ağrı kontrolü; debridman ve gereksiz cerrahiden kaçınılmalıdır (paterji riski)","Wound care and analgesia; avoid debridement and unnecessary surgery (pathergy risk)"],
+     ["Altta yatan sistemik hastalığın tedavisi","Treat the underlying systemic disease"]
+   ],
+   referralFlags:[
+     ["Hızlı progresyon, geniş/derin ülser veya sistemik toksisite → yatarak tedavi","Rapid progression, extensive/deep ulceration or systemic toxicity → inpatient management"],
+     ["Enfeksiyon dışlanamıyorsa veya tedaviye yanıtsızlık → enfeksiyon hastalıkları / yeniden biyopsi","If infection cannot be excluded or no treatment response → infectious diseases / repeat biopsy"],
+     ["İnflamatuar bağırsak hastalığı şüphesi → gastroenteroloji","Suspected inflammatory bowel disease → gastroenterology"],
+     ["Monoklonal gamopati veya sitopeni → hematoloji","Monoclonal gammopathy or cytopenia → haematology"],
+     ["Peristomal veya postoperatif PG → ilgili cerrahi branş ile ortak yönetim","Peristomal or postoperative PG → co-management with the relevant surgical specialty"]
+   ]
+ },
+ references:[
+   "Su WPD, Davis MDP, Weenig RH, Powell FC, Perry HO. Pyoderma gangrenosum: clinicopathologic correlation and proposed diagnostic criteria. Int J Dermatol. 2004;43(11):790-800.",
+   "Maverakis E, Ma C, Shinkai K, et al. Diagnostic Criteria of Ulcerative Pyoderma Gangrenosum: A Delphi Consensus of International Experts. JAMA Dermatol. 2018;154(4):461-466.",
+   "Jockenhöfer F, Wollina U, Salva KA, Benson S, Dissemond J. The PARACELSUS score: a novel diagnostic tool for pyoderma gangrenosum. Br J Dermatol. 2019;180(3):615-620."
+ ]
+},
+
+/* ---- sjsten ---- */
+{
+ id:"sjsten",cat:"drug",
+ name:{tr:"SJS / TEN",en:"SJS / TEN"},
+ full:["Stevens-Johnson Sendromu / Toksik Epidermal Nekroliz","Stevens-Johnson Syndrome / Toxic Epidermal Necrolysis"],
+ relatedCalcs:["SCORTEN","BSA"],
+ sets:[
+
+   /* ---- Set 1: RegiSCAR / Bastuji-Garin phenotype classification ---- */
+   {
+     key:"pheno",
+     tab:["Fenotip sınıflaması","Phenotype classification"],
+     name:"Bastuji-Garin / RegiSCAR consensus clinical classification",year:1993,
+     applicabilityNote:["Bu bir tanı kriteri değil, FENOTİP sınıflamasıdır: ayrılan + ayrılabilir (Nikolsky pozitif) epidermis yüzdesine göre SJS / overlap / TEN ayrımı yapar. Büllöz eritema multiforme ayrı bir antitedir (lokalize tipik hedef lezyonlar, sıklıkla HSV ilişkili) ve bu spektruma dahil değildir. Mortalite tahmini için SCORTEN kullanın.",
+                        "This is a PHENOTYPE classification, not a diagnostic criterion: it separates SJS / overlap / TEN by the percentage of detached + detachable (Nikolsky-positive) epidermis. Bullous erythema multiforme is a separate entity (localized typical targets, often HSV-associated) and is not part of this spectrum. Use SCORTEN for mortality prediction."],
+     scoringType:"points-banded",
+     items:[
+       {id:"ph_bsa",label:["Ayrılan + ayrılabilir epidermis (vücut yüzey alanı %)","Detached + detachable epidermis (% body surface area)"],
+        hint:["Yalnızca nekrotik/ayrılmış epidermis sayılır; ayrılmamış eritem dahil edilmez. Ayrılabilir alan Nikolsky/Asboe-Hansen ile değerlendirilir.",
+              "Count only necrotic/detached epidermis; non-detached erythema is excluded. Detachable area is assessed with the Nikolsky/Asboe-Hansen sign."],
+        type:"choice",
+        options:[
+          ["Henüz değerlendirilmedi","Not yet assessed",0],
+          ["<%10","<10%",1],
+          ["%10–30","10–30%",2],
+          [">%30",">30%",3]
+        ]},
+       {id:"ph_morph",label:["Baskın lezyon morfolojisi","Predominant lesion morphology"],
+        hint:["Yaygın purpurik maküller veya düz atipik hedefler SJS/TEN spektrumunu destekler. Lokalize tipik hedefler veya kabarık atipik hedefler büllöz eritema multiforme lehinedir.",
+              "Widespread purpuric macules or flat atypical targets support the SJS/TEN spectrum. Localized typical targets or raised atypical targets favour bullous erythema multiforme."],
+        type:"choice",
+        options:[
+          ["Belirtilmedi","Not specified",0],
+          ["Yaygın purpurik maküller / düz atipik hedefler","Widespread purpuric macules / flat atypical targets",0],
+          ["Hedef lezyon olmaksızın geniş epidermal tabakalar (\"spotsuz TEN\")","Large epidermal sheets without target lesions (\"TEN without spots\")",0],
+          ["Lokalize tipik hedefler / kabarık atipik hedefler (eritema multiforme lehine)","Localized typical targets / raised atypical targets (favours erythema multiforme)",0]
+        ]},
+       {id:"ph_muc",label:["En az 2 mukozal bölgede tutulum (oral, oküler, genital)","Involvement of at least 2 mucosal sites (oral, ocular, genital)"],points:0},
+       {id:"ph_prod",label:["Prodromal ateş ve grip benzeri semptomlar","Prodromal fever and influenza-like symptoms"],points:0},
+       {id:"ph_drug",label:["Şüpheli ilaç maruziyeti (ilk 8 hafta içinde)","Suspect drug exposure (within the preceding 8 weeks)"],points:0}
+     ],
+     bands:[
+       {max:0,label:["Ayrılma yüzdesi girilmedi — sınıflandırılamadı","Detachment extent not entered — cannot classify"],met:false},
+       {max:1,label:["Stevens-Johnson Sendromu (<%10)","Stevens-Johnson Syndrome (<10%)"],met:true},
+       {max:2,label:["SJS/TEN Overlap (%10–30)","SJS/TEN Overlap (10–30%)"],met:true},
+       {      label:["Toksik Epidermal Nekroliz (>%30)","Toxic Epidermal Necrolysis (>30%)"],met:true}
+     ]
+   },
+
+   /* ---- Set 2: ALDEN drug causality ---- */
+   {
+     key:"alden",
+     tab:["ALDEN (ilaç nedenselliği)","ALDEN (drug causality)"],
+     name:"ALDEN — Algorithm for Drug causality in Epidermal Necrolysis (Sassolas et al.)",year:2010,
+     applicabilityNote:["Tanı kriteri değildir; epidermal nekroliz tanısı konmuş bir hastada sorumlu ilacı belirlemeye yarayan bir nedensellik algoritmasıdır. TEK BİR ilaç için doldurulur — her şüpheli ilaç için formu yeniden çalıştırıp skorları karşılaştırın. İndeks gün = ilk kutanöz belirtinin (döküntü/erozyon) ortaya çıktığı gündür. Altı parametrenin tümü ayrı ayrı seçilmelidir; varsayılan seçenekler değerlendirme yapıldığı anlamına gelmez (form muhafazakâr, düşük skorlu durumda başlar). Toplam skor aralığı −12 ile +10 arasındadır.",
+                        "Not a diagnostic criterion; it is a causality algorithm for identifying the culprit drug in a patient with established epidermal necrolysis. It is completed for ONE drug at a time — re-run the form for each suspect drug and compare the scores. Index day = the day the first cutaneous sign (rash/erosion) appeared. All six parameters must be set individually; the default options do not imply that an assessment has been made (the form starts in a conservative, low-scoring state). Total score ranges from −12 to +10."],
+     scoringType:"points-banded",
+     items:[
+       {id:"al_delay",label:["1. İlk ilaç alımından indeks güne kadar geçen süre","1. Delay from initial drug intake to index day"],
+        hint:["Parantez içindeki süreler daha önce aynı ilaca maruz kalmış hastalar (yeniden maruziyet) içindir.",
+              "Values in brackets apply to patients previously exposed to the same drug (re-exposure)."],
+        type:"choice",
+        options:[
+          ["Dışlandı: ilaç indeks günde veya sonrasında başlanmış","Excluded: drug started on or after the index day",-3],
+          ["Olası değil: >56 gün","Unlikely: >56 days",-1],
+          ["Olası: 1–4 gün (yeniden maruziyette 29–56 gün)","Likely: 1–4 days (29–56 days if re-exposed)",1],
+          ["Uyumlu: 29–56 gün (yeniden maruziyette 5–28 gün)","Compatible: 29–56 days (5–28 days if re-exposed)",2],
+          ["Düşündürücü: 5–28 gün (yeniden maruziyette 1–4 gün)","Suggestive: 5–28 days (1–4 days if re-exposed)",3]
+        ]},
+       {id:"al_present",label:["2. İlacın indeks günde vücutta bulunması","2. Drug present in the body on the index day"],
+        hint:["Eliminasyon yarı ömrünün 5 katı ölçüt alınır.","The reference is 5 times the elimination half-life."],
+        type:"choice",
+        options:[
+          ["Dışlandı: 5 yarı ömürden önce kesilmiş, organ yetmezliği/etkileşim yok","Excluded: stopped more than 5 half-lives before, without organ impairment or interaction",-3],
+          ["Şüpheli: 5 yarı ömürden önce kesilmiş ANCAK karaciğer/böbrek yetmezliği veya ilaç etkileşimi var","Doubtful: stopped more than 5 half-lives before, BUT with hepatic/renal impairment or drug interaction",-1],
+          ["Kesin: ilaç indeks güne kadar sürdürülmüş veya 5 yarı ömürden daha kısa süre önce kesilmiş","Definite: drug continued up to the index day, or stopped less than 5 half-lives before it",0]
+        ]},
+       {id:"al_rechal",label:["3. Önceden maruziyet / yeniden maruziyet (pre-/rechallenge)","3. Prechallenge / rechallenge"],
+        type:"choice",
+        options:[
+          ["Yapılmadı / bilinmiyor","Not done / unknown",0],
+          ["Hastalığa ve ilaca özgül pozitif: aynı ilaçla daha önce SJS/TEN","Positive specific for disease and drug: previous SJS/TEN with the same drug",4],
+          ["Hastalığa veya ilaca özgül pozitif: benzer ilaçla SJS/TEN, ya da aynı ilaçla başka bir reaksiyon","Positive specific for disease or drug: SJS/TEN with a similar drug, or another reaction with the same drug",2],
+          ["Özgül olmayan pozitif: benzer bir ilaçla başka bir reaksiyon","Positive unspecific: another reaction with a similar drug",1],
+          ["Negatif: bu ilaca reaksiyonsuz maruziyet (öncesinde veya sonrasında)","Negative: exposure to this drug without any reaction (before or after)",-2]
+        ]},
+       {id:"al_dechal",label:["4. İlacın kesilmesine yanıt (dechallenge)","4. Dechallenge"],
+        type:"choice",
+        options:[
+          ["Nötr: ilaç kesilmiş veya bilinmiyor","Neutral: drug stopped, or unknown",0],
+          ["Negatif: ilaç sürdürülmesine rağmen hastalık gerilemiş","Negative: drug continued without harm",-2]
+        ]},
+       {id:"al_noto",label:["5. İlacın bilinen risk düzeyi (notorite)","5. Notoriety of the drug"],
+        hint:["Yüksek riskli grup: allopurinol, karbamazepin, fenitoin, fenobarbital, lamotrijin, sülfametoksazol ve diğer anti-enfektif sülfonamidler, nevirapin, oksikam NSAİİ'ler.",
+              "High-risk group: allopurinol, carbamazepine, phenytoin, phenobarbital, lamotrigine, sulfamethoxazole and other anti-infective sulfonamides, nevirapine, oxicam NSAIDs."],
+        type:"choice",
+        options:[
+          ["Bilinmiyor: diğer tüm ilaçlar (yeni piyasaya çıkanlar dahil)","Unknown: all other drugs, including newly released ones",0],
+          ["Güçlü ilişkili: yüksek riskli ilaç listesinde","Strongly associated: on the high-risk drug list",3],
+          ["Kesin ilişkili","Definitely associated",2],
+          ["Şüpheli ilişki: birkaç olgu bildirimi var, epidemiyolojisi belirsiz","Suspected association: a few previous reports, ambiguous epidemiology",1],
+          ["İlişkili değil: yeterli sayıda maruz kalan kontrolle yapılmış çalışmada ilişki gösterilmemiş","Not suspected: no association in a study with a sufficient number of exposed controls",-1]
+        ]},
+       {id:"al_other",label:["6. Diğer nedenler","6. Other cause"],
+        hint:["Aynı hastada değerlendirilen başka bir ilaç daha yüksek bir ara skor alıyorsa bu ilaç için −1 uygulanır.",
+              "If another drug evaluated in the same patient reaches a higher intermediate score, apply −1 to this drug."],
+        type:"choice",
+        options:[
+          ["Daha yüksek skorlu alternatif ilaç yok","No alternative drug with a higher score",0],
+          ["Daha yüksek ara skor alan olası alternatif ilaç var","A possible alternative drug reaches a higher intermediate score",-1]
+        ]}
+     ],
+     bands:[
+       {max:-1,label:["Çok olası değil (very unlikely)","Very unlikely"],met:false},
+       {max:1, label:["Olası değil (unlikely)","Unlikely"],met:false},
+       {max:3, label:["Olası (possible)","Possible"],met:false},
+       {max:5, label:["Muhtemel (probable)","Probable"],met:true},
+       {       label:["Çok muhtemel (very probable)","Very probable"],met:true}
+     ]
+   }
+
+ ],
+ differentials:[
+   ["Büllöz eritema multiforme (lokalize tipik hedefler, sıklıkla HSV ilişkili)","Bullous erythema multiforme (localized typical targets, often HSV-associated)"],
+   ["Stafilokoksik haşlanmış deri sendromu (subkorneal ayrılma, mukoza korunur)","Staphylococcal scalded skin syndrome (subcorneal split, mucosa spared)"],
+   ["Akut jeneralize ekzantematöz püstüloz (AGEP)","Acute generalized exanthematous pustulosis (AGEP)"],
+   ["Jeneralize büllöz fiks ilaç erüpsiyonu","Generalized bullous fixed drug eruption"],
+   ["Paraneoplastik pemfigus, akut graft-versus-host hastalığı","Paraneoplastic pemphigus, acute graft-versus-host disease"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Ayrılan + ayrılabilir epidermis yüzdesinin günlük ölçümü (Nikolsky/Asboe-Hansen)","Daily measurement of detached + detachable epidermis (Nikolsky/Asboe-Hansen)"],
+     ["Lezyonel biyopsi + perilezyonel direkt immünfloresan (ayırıcı tanı için)","Lesional biopsy + perilesional direct immunofluorescence (for differential diagnosis)"],
+     ["SCORTEN parametreleri: yaş, malignite, kalp hızı, BUN/üre, bikarbonat, glukoz, yüzey alanı","SCORTEN parameters: age, malignancy, heart rate, BUN/urea, bicarbonate, glucose, body surface area"],
+     ["Tüm ilaçların 8 haftalık kronolojik dökümü ve her şüpheli ilaç için ayrı ALDEN skorlaması","Chronological 8-week list of all drugs, with a separate ALDEN score for each suspect drug"],
+     ["Göz, ağız, genital mukoza ve solunum yolu değerlendirmesi; sıvı-elektrolit ve enfeksiyon takibi","Assess ocular, oral, genital mucosa and airway; monitor fluid-electrolyte status and infection"]
+   ],
+   treatmentOrientation:[
+     ["Şüpheli ilaç(lar)ın DERHAL kesilmesi tek kanıtlanmış yaşam kurtarıcı müdahaledir","Immediate withdrawal of the suspect drug(s) is the only proven life-saving intervention"],
+     ["Yanık ünitesi / yoğun bakım düzeyinde destek: ısı kontrolü, sıvı-elektrolit, beslenme, analjezi, steril yara bakımı","Burn-unit / intensive-care level support: thermoregulation, fluids-electrolytes, nutrition, analgesia, sterile wound care"],
+     ["Profilaktik sistemik antibiyotik önerilmez; enfeksiyon kanıtı varsa kültüre göre tedavi","Prophylactic systemic antibiotics are not recommended; treat culture-guided if infection is documented"],
+     ["İmmünomodülatör tedavi (siklosporin, TNF inhibitörü, IVIG) tartışmalıdır; merkez protokolüne göre karar verilir","Immunomodulatory therapy (ciclosporin, TNF inhibitor, IVIG) is debated; decide per institutional protocol"],
+     ["Debridman yaklaşımı ve gelecekteki ilaç kaçınma listesi taburculuk öncesi netleştirilmelidir","Clarify the debridement approach and the future drug-avoidance list before discharge"]
+   ],
+   referralFlags:[
+     ["Her SJS/TEN şüphesi → ACİL yatış; >%10 ayrılmada yanık ünitesi/yoğun bakım","Any suspected SJS/TEN → URGENT admission; burn unit/ICU if detachment >10%"],
+     ["Oküler tutulum → ilk 24 saatte oftalmoloji (kalıcı görme kaybı riski)","Ocular involvement → ophthalmology within 24 hours (risk of permanent visual loss)"],
+     ["Solunum yolu semptomları (dispne, hipoksi, disfoni) → acil hava yolu değerlendirmesi","Airway symptoms (dyspnoea, hypoxia, dysphonia) → urgent airway assessment"],
+     ["Ürogenital/anal mukoza tutulumu → üroloji/jinekoloji (sineşi önlenmesi)","Urogenital/anal mucosal involvement → urology/gynaecology (to prevent synechiae)"],
+     ["Taburculukta ilaç alerjisi belgelenmesi ve uzun dönem göz/mukoza izlemi","Document the drug allergy at discharge and arrange long-term ocular/mucosal follow-up"]
+   ]
+ },
+ references:[
+   "Bastuji-Garin S, Rzany B, Stern RS, Shear NH, Naldi L, Roujeau JC. Clinical classification of cases of toxic epidermal necrolysis, Stevens-Johnson syndrome, and erythema multiforme. Arch Dermatol. 1993;129(1):92-96.",
+   "Sassolas B, Haddad C, Mockenhaupt M, et al. ALDEN, an algorithm for assessment of drug causality in Stevens-Johnson syndrome and toxic epidermal necrolysis: comparison with case-control analysis. Clin Pharmacol Ther. 2010;88(1):60-68.",
+   "Bastuji-Garin S, Fouchard N, Bertocchi M, Roujeau JC, Revuz J, Wolkenstein P. SCORTEN: a severity-of-illness score for toxic epidermal necrolysis. J Invest Dermatol. 2000;115(2):149-153."
+ ]
+},
+
+/* ---- dress ---- */
+{
+ id:"dress",cat:"drug",
+ name:{tr:"DRESS Sendromu",en:"DRESS Syndrome"},
+ full:["DRESS Sendromu (İlaç Reaksiyonu ile Eozinofili ve Sistemik Semptomlar)","DRESS Syndrome (Drug Reaction with Eosinophilia and Systemic Symptoms)"],
+ relatedCalcs:["BSA","eGFR"],
+ sets:[
+   /* ---- Set 1: RegiSCAR validation scoring system ---- */
+   {
+     key:"regiscar",
+     tab:["RegiSCAR","RegiSCAR"],
+     name:"RegiSCAR DRESS validation scoring system (Kardaun et al.)",
+     year:2007,
+     applicabilityNote:["RegiSCAR skoru olgu doğrulama (vaka validasyonu) amacıyla geliştirilmiş bir sınıflandırma aracıdır; yatak başı tanı kriteri değildir. Skorlama ancak reaksiyonun tüm seyri (özellikle ≥15 gün süren düzelme) bilindiğinde tamamlanabilir. Toplam skor aralığı −4 ile +9 arasındadır.",
+                        "The RegiSCAR score is a case-validation (classification) instrument, not a bedside diagnostic criterion. Scoring can only be completed once the full course of the reaction is known (notably resolution taking ≥15 days). Total score ranges from −4 to +9."],
+     scoringType:"points-banded",
+     items:[
+       {id:"rs_fever",label:["Ateş ≥38,5 °C","Fever ≥38.5 °C"],
+        type:"choice",
+        options:[
+          ["Yok (<38,5 °C) veya bilinmiyor","No (<38.5 °C) or unknown",-1],
+          ["Var (≥38,5 °C)","Yes (≥38.5 °C)",0]
+        ]},
+       {id:"rs_ln",label:["Büyümüş lenf nodları (≥1 cm, en az 2 farklı bölgede)","Enlarged lymph nodes (≥1 cm, at least 2 different sites)"],points:1},
+       {id:"rs_eos",label:["Eozinofili","Eosinophilia"],
+        hint:["Lökosit sayısı <4000/µL ise yüzde değerleri kullanılmalıdır.","If leucocytes are <4000/µL, the percentage values should be used."],
+        type:"choice",
+        options:[
+          ["Yok veya bilinmiyor","No or unknown",0],
+          ["700–1499/µL veya %10–19,9","700–1499/µL or 10–19.9%",1],
+          ["≥1500/µL veya ≥%20","≥1500/µL or ≥20%",2]
+        ]},
+       {id:"rs_atyp",label:["Atipik lenfositler (periferik yayma)","Atypical lymphocytes (peripheral blood smear)"],points:1},
+       {id:"rs_ext",label:["Deri döküntüsü yaygınlığı >%50 vücut yüzey alanı","Skin rash extent >50% body surface area"],points:1},
+       {id:"rs_rash",label:["Döküntü morfolojisi DRESS'i düşündürüyor mu?","Does the rash morphology suggest DRESS?"],
+        hint:["DRESS'i düşündüren döküntü = şu 4 özellikten en az 2'si: bacaklar dışında purpurik lezyonlar, infiltrasyon, yüz ödemi, psoriaziform deskuamasyon.",
+              "Rash suggesting DRESS = at least 2 of these 4 features: purpuric lesions other than on the legs, infiltration, facial oedema, psoriasiform desquamation."],
+        type:"choice",
+        options:[
+          ["Bilinmiyor / değerlendirilemedi","Unknown / not assessable",0],
+          ["Evet — DRESS'i düşündürüyor (4 özellikten ≥2'si)","Yes — suggests DRESS (≥2 of the 4 features)",1],
+          ["Hayır — başka tip bir reaksiyonu düşündürüyor (4 özellikten <2'si)","No — suggests another type of reaction (<2 of the 4 features)",-1]
+        ]},
+       {id:"rs_bx",label:["Deri biyopsisi DRESS'i düşündürüyor mu?","Does the skin biopsy suggest DRESS?"],
+        type:"choice",
+        options:[
+          ["Biyopsi yapılmadı / bilinmiyor","No biopsy performed / unknown",0],
+          ["Evet — DRESS ile uyumlu","Yes — compatible with DRESS",0],
+          ["Hayır — alternatif bir tanıyı düşündürüyor","No — suggests an alternative diagnosis",-1]
+        ]},
+       {id:"rs_organ",label:["Organ tutulumu (diğer açıklamalar dışlandıktan sonra)","Organ involvement (after exclusion of other explanations)"],
+        hint:["Sayılan organlar: karaciğer, böbrek, akciğer, kas/kalp, pankreas, diğer organ. En fazla 2 puan.",
+              "Organs counted: liver, kidney, lung, muscle/heart, pancreas, other organ. Maximum 2 points."],
+        type:"choice",
+        options:[
+          ["Yok veya bilinmiyor","None or unknown",0],
+          ["Bir organ","One organ",1],
+          ["İki veya daha fazla organ","Two or more organs",2]
+        ]},
+       {id:"rs_res",label:["Düzelme ≥15 günde","Resolution in ≥15 days"],
+        type:"choice",
+        options:[
+          ["Hayır (<15 gün) veya bilinmiyor","No (<15 days) or unknown",-1],
+          ["Evet (≥15 gün)","Yes (≥15 days)",0]
+        ]},
+       {id:"rs_other",label:["Diğer olası nedenlerin değerlendirilmesi: ANA, kan kültürü, HAV/HBV/HCV serolojisi, Chlamydia/Mycoplasma serolojisi — bunlardan ≥3'ü yapılmış ve hiçbiri pozitif değilse",
+                             "Evaluation of other potential causes: ANA, blood culture, serology for HAV/HBV/HCV, Chlamydia/Mycoplasma serology — if ≥3 of these were performed and none was positive"],points:1}
+     ],
+     bands:[
+       {max:1,label:["DRESS dışlandı (olgu değil)","DRESS excluded (no case)"],met:false},
+       {max:3,label:["Olası DRESS","Possible DRESS"],met:false},
+       {max:5,label:["Muhtemel DRESS","Probable DRESS"],met:true},
+       {       label:["Kesin DRESS","Definite DRESS"],met:true}
+     ]
+   },
+
+   /* ---- Set 2: Bocquet et al. 1996 ---- */
+   {
+     key:"bocquet",
+     tab:["Bocquet 1996","Bocquet 1996"],
+     name:"Bocquet, Bagot & Roujeau (1996)",
+     year:1996,
+     applicabilityNote:["Üç ana başlığın tümü karşılanmalıdır. Uygulaması kolaydır ancak ateş, viral reaktivasyon ve geç seyir gibi öğeleri içermediğinden hafif/atipik olgularda RegiSCAR'a göre daha az duyarlıdır.",
+                        "All three headings must be met. Easy to apply, but it omits fever, viral reactivation and late course, so it is less sensitive than RegiSCAR in mild/atypical cases."],
+     scoringType:"major-minor",
+     groups:[
+       {key:"cut",label:["1. Kutanöz ilaç erüpsiyonu — gerekli","1. Cutaneous drug eruption — required"],
+        short:["Kutanöz","Cutaneous"],need:1,
+        items:[
+          {id:"bq_c1",label:["İlaca bağlı kutanöz erüpsiyon","Cutaneous drug eruption"]}
+        ]},
+       {key:"heme",label:["2. Hematolojik anormallik — en az 1/2","2. Haematologic abnormality — at least 1 of 2"],
+        short:["Hematolojik","Haematologic"],need:1,
+        items:[
+          {id:"bq_h1",label:["Eozinofili ≥1,5 × 10⁹/L","Eosinophilia ≥1.5 × 10⁹/L"]},
+          {id:"bq_h2",label:["Atipik lenfositlerin varlığı","Presence of atypical lymphocytes"]}
+        ]},
+       {key:"sys",label:["3. Sistemik tutulum — en az 1/5","3. Systemic involvement — at least 1 of 5"],
+        short:["Sistemik","Systemic"],need:1,
+        items:[
+          {id:"bq_s1",label:["Adenopati ≥2 cm çapında","Adenopathies ≥2 cm in diameter"]},
+          {id:"bq_s2",label:["Hepatit (transaminazlar normalin ≥2 katı)","Hepatitis (transaminases ≥2× normal)"]},
+          {id:"bq_s3",label:["İnterstisyel nefrit","Interstitial nephritis"]},
+          {id:"bq_s4",label:["İnterstisyel pnömoni","Interstitial pneumonitis"]},
+          {id:"bq_s5",label:["Kardit","Carditis"]}
+        ]}
+     ]
+   }
+ ],
+ differentials:[
+   ["Akut jeneralize ekzantematöz püstüloz (AGEP)","Acute generalized exanthematous pustulosis (AGEP)"],
+   ["Stevens-Johnson sendromu / toksik epidermal nekroliz","Stevens-Johnson syndrome / toxic epidermal necrolysis"],
+   ["Basit makülopapüler ilaç erüpsiyonu","Simple maculopapular drug eruption"],
+   ["Akut viral enfeksiyon/ekzantem (EBV, CMV, HHV-6, akut HIV)","Acute viral infection/exanthem (EBV, CMV, HHV-6, acute HIV)"],
+   ["Erişkin Still hastalığı","Adult-onset Still's disease"],
+   ["Hipereozinofilik sendrom / eozinofilik granülomatöz polianjiit (EGPA)","Hypereosinophilic syndrome / eosinophilic granulomatosis with polyangiitis (EGPA)"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Tam kan sayımı + periferik yayma (eozinofil sayısı, atipik lenfositler)","Complete blood count + peripheral smear (eosinophil count, atypical lymphocytes)"],
+     ["Karaciğer fonksiyon testleri, kreatinin/eGFR, idrar sedimenti; amilaz-lipaz, kreatin kinaz, troponin, EKG","Liver function tests, creatinine/eGFR, urine sediment; amylase-lipase, creatine kinase, troponin, ECG"],
+     ["Ayırıcı tanı taraması: ANA, kan kültürü, HAV/HBV/HCV serolojisi, Chlamydia/Mycoplasma (RegiSCAR maddesi)","Differential workup: ANA, blood culture, HAV/HBV/HCV serology, Chlamydia/Mycoplasma (RegiSCAR item)"],
+     ["Viral reaktivasyon PCR'ı (HHV-6/HHV-7, EBV, CMV) ve tanısal doğrulama için deri biyopsisi","Viral reactivation PCR (HHV-6/HHV-7, EBV, CMV) and skin biopsy for diagnostic confirmation"],
+     ["Tiroid fonksiyon testleri — başlangıçta ve iyileşme sonrası aylarca tekrarlanan izlem","Thyroid function tests — at baseline and repeated for months after recovery"]
+   ],
+   treatmentOrientation:[
+     ["Sorumlu ilacın derhal kesilmesi esastır; çapraz reaktif ilaç gruplarından kaçınılmalıdır","Immediate withdrawal of the culprit drug is essential; cross-reactive drug classes must be avoided"],
+     ["Destek tedavi: sıvı-elektrolit dengesi, ısı kontrolü, emolyan ve topikal kortikosteroid","Supportive care: fluid-electrolyte balance, temperature control, emollients and topical corticosteroids"],
+     ["Anlamlı organ tutulumunda sistemik kortikosteroid ile başlanabilir; erken kesilmede alevlenme riski nedeniyle yavaş azaltılır","Systemic corticosteroids may be started for significant organ involvement; taper slowly because abrupt withdrawal risks flare"],
+     ["Steroide dirençli veya ağır olgularda siklosporin, IVIG ya da diğer immünmodülatör seçenekler değerlendirilebilir","In steroid-refractory or severe cases, ciclosporin, IVIG or other immunomodulatory options may be considered"],
+     ["İlaç alerjisi kaydı açılmalı; hastaya ve birinci derece akrabalara kaçınma bilgisi verilmelidir","Document the drug allergy; counsel the patient and first-degree relatives on avoidance"]
+   ],
+   referralFlags:[
+     ["Fulminan hepatit / karaciğer yetmezliği → ACİL hepatoloji ve transplantasyon merkezi","Fulminant hepatitis / liver failure → URGENT hepatology and transplant centre"],
+     ["Miyokardit şüphesi (göğüs ağrısı, dispne, troponin/EKG değişikliği) → ACİL kardiyoloji","Suspected myocarditis (chest pain, dyspnoea, troponin/ECG change) → URGENT cardiology"],
+     ["Akut interstisyel nefrit / böbrek yetmezliği → nefroloji","Acute interstitial nephritis / renal failure → nephrology"],
+     ["Hemofagositik lenfohistiositoz (HLH) bulguları → ACİL hematoloji","Features of haemophagocytic lymphohistiocytosis (HLH) → URGENT haematology"],
+     ["Geç otoimmün sekel (tiroidit, tip 1 diyabet) → endokrinoloji ve uzun dönem izlem","Late autoimmune sequelae (thyroiditis, type 1 diabetes) → endocrinology and long-term follow-up"]
+   ]
+ },
+ references:[
+   "Kardaun SH, Sidoroff A, Valeyrie-Allanore L, et al. Variability in the clinical pattern of cutaneous side-effects of drugs with systemic symptoms: does a DRESS syndrome really exist? Br J Dermatol. 2007;156(3):609-611.",
+   "Kardaun SH, Sekula P, Valeyrie-Allanore L, et al. Drug reaction with eosinophilia and systemic symptoms (DRESS): an original multisystem adverse drug reaction. Results from the prospective RegiSCAR study. Br J Dermatol. 2013;169(5):1071-1080.",
+   "Bocquet H, Bagot M, Roujeau JC. Drug-induced pseudolymphoma and drug hypersensitivity syndrome (Drug Rash with Eosinophilia and Systemic Symptoms: DRESS). Semin Cutan Med Surg. 1996;15(4):250-257."
+ ]
+},
+
+/* ---- hs ---- */
+{
+ id:"hs",cat:"hsx",
+ name:{tr:"Hidradenitis Süpürativa",en:"Hidradenitis Suppurativa"},
+ full:["Hidradenitis Süpürativa (Akne İnversa)","Hidradenitis Suppurativa (Acne Inversa)"],
+ relatedCalcs:["Hurley","IHS4"],
+ sets:[
+   {
+     key:"diag",
+     tab:["Tanı triadı","Diagnostic triad"],
+     name:"Modified Dessau criteria — clinical diagnostic triad (2nd International HS Conference, San Francisco 2009)",
+     year:2009,
+     applicabilityNote:[
+       "HS klinik bir TANI kriteridir (modifiye Dessau tanımı; Dessau 2006'da oluşturulmuş, San Francisco 2009'da modifiye edilerek benimsenmiştir). Tanı için üç kriterin de bulunması gerekir. Doğrulayıcı laboratuvar testi veya histopatoloji GEREKMEZ; kültür yalnızca süperenfeksiyon şüphesinde, biyopsi yalnızca ayırıcı tanı veya uzun süreli lezyonda skuamöz hücreli karsinom şüphesinde yapılır. Kroniklik/rekürrens koşulu nedeniyle kesin tanı için bir gözlem süresi gerekebilir. Şiddet evrelemesi bu sette yer almaz — Hurley ve IHS4 hesaplayıcılarını kullanın.",
+       "HS is a clinical DIAGNOSTIC criterion (modified Dessau definition; established at Dessau 2006 and modified/adopted at San Francisco 2009). All three criteria must be fulfilled to establish the diagnosis. No confirmatory laboratory test or histopathology is REQUIRED; culture only if superinfection is suspected, biopsy only for differential diagnosis or when squamous cell carcinoma is suspected in long-standing lesions. Because of the chronicity/recurrence requirement, a period of observation may be needed before the definitive diagnosis. Severity staging is not part of this set — use the Hurley and IHS4 calculators."
+     ],
+     scoringType:"major-minor",
+     groups:[
+       {key:"triad",
+        label:["Tanı kriterleri — üçü de gerekli","Diagnostic criteria — all three required"],
+        short:["Triad","Triad"],
+        need:3,
+        items:[
+          {id:"hs_d1",
+           label:["Tipik lezyonlar","Typical lesions"],
+           hint:["Erken lezyonlar: derin yerleşimli ağrılı nodüller ('kör çıban'). Sekonder lezyonlar: apseler, akıntılı sinüs traktları (tüneller), köprüleşmiş skarlar ve çift uçlu ('mezar taşı') psödokomedonlar.",
+                 "Early lesions: deep-seated painful nodules ('blind boils'). Secondary lesions: abscesses, draining sinus tracts (tunnels), bridged scars, and double-ended ('tombstone') pseudo-comedones."]},
+          {id:"hs_d2",
+           label:["Tipik lokalizasyon (topografi)","Typical topography (location)"],
+           hint:["Aksilla, inguinal bölge, perineal ve perianal bölge, gluteal bölge, infra- ve intermammarian kıvrımlar.",
+                 "Axillae, groin, perineal and perianal regions, buttocks, infra- and inter-mammary folds."]},
+          {id:"hs_d3",
+           label:["Kroniklik ve rekürrens","Chronicity and recurrence"],
+           hint:["Kronik ve/veya tekrarlayan seyir. Literatürde yaygın kullanılan pratik eşik: 6 ay içinde en az 2 rekürrens (orijinal Dessau ifadesinin parçası değil, uzlaşıya dayalı bir niceleyici).",
+                 "Chronic and/or recurrent course. Commonly used practical qualifier in the literature: at least 2 recurrences over 6 months (a consensus-based qualifier, not part of the original Dessau wording)."]}
+        ]}
+     ]
+   }
+ ],
+ differentials:[
+   ["Fronkül / karbonkül, tekrarlayan kutanöz apse","Furuncle / carbuncle, recurrent cutaneous abscess"],
+   ["Epidermoid kist, pilonidal sinüs","Epidermoid cyst, pilonidal sinus"],
+   ["Crohn hastalığı: perianal fistül veya metastatik Crohn","Crohn disease: perianal fistula or metastatic Crohn"],
+   ["Kutanöz tüberküloz (skrofuloderma), aktinomikoz, nokardiyoz","Cutaneous tuberculosis (scrofuloderma), actinomycosis, nocardiosis"],
+   ["Lenfogranüloma venereum, granüloma inguinale","Lymphogranuloma venereum, granuloma inguinale"],
+   ["Akne konglobata, dissekan selülit (folikülar oklüzyon tetradı)","Acne conglobata, dissecting cellulitis (follicular occlusion tetrad)"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Tüm intertrijinöz alanların (aksilla, inguinal, perianal, gluteal, inframammarian) muayenesi","Examine all intertriginous sites (axillary, inguinal, perianal, gluteal, inframammary)"],
+     ["Hurley evrelemesi ve IHS4 ile şiddet belirlenmesi","Determine severity with Hurley staging and IHS4"],
+     ["Sürüntü/kültür yalnızca süperenfeksiyon şüphesinde (rutin değil)","Swab/culture only if superinfection is suspected (not routine)"],
+     ["Sigara kullanımı, vücut kitle indeksi, metabolik sendrom ve depresyon taraması","Screen for smoking, body mass index, metabolic syndrome, and depression"],
+     ["Uzun süreli/atipik lezyonda skuamöz hücreli karsinom için biyopsi","Biopsy for squamous cell carcinoma in long-standing/atypical lesions"]
+   ],
+   treatmentOrientation:[
+     ["Hafif hastalıkta topikal antiseptik ve topikal klindamisin ile başlanabilir","Mild disease may be started on topical antiseptics and topical clindamycin"],
+     ["Orta şiddette sistemik tetrasiklin veya klindamisin-rifampisin kombinasyonu düşünülür","Moderate disease: consider systemic tetracycline or clindamycin-rifampicin combination"],
+     ["Orta-ağır veya dirençli hastalıkta biyolojik tedavi (anti-TNF, anti-IL-17) endikedir","Moderate-to-severe or refractory disease: biologic therapy (anti-TNF, anti-IL-17) is indicated"],
+     ["Ağrı yönetimi, yara bakımı, sigara bırakma ve kilo yönetimi tedavinin ayrılmaz parçasıdır","Pain management, wound care, smoking cessation, and weight management are integral to care"],
+     ["Kalıcı tünel ve skar varlığında (özellikle Hurley III) cerrahi geniş eksizyon veya deroofing","Persistent tunnels and scarring (especially Hurley III): wide surgical excision or deroofing"]
+   ],
+   referralFlags:[
+     ["Hurley II-III veya yaygın tünel/skar → deneyimli dermatoloji merkezi","Hurley II-III or extensive tunnels/scarring → experienced dermatology centre"],
+     ["Uzun süreli lezyonda skuamöz hücreli karsinom şüphesi → acil biyopsi","Suspected squamous cell carcinoma in long-standing lesions → urgent biopsy"],
+     ["Perianal fistül, kronik ishal, rektal kanama → gastroenteroloji (Crohn hastalığı)","Perianal fistula, chronic diarrhoea, rectal bleeding → gastroenterology (Crohn disease)"],
+     ["Geniş eksizyon veya rekonstrüksiyon gereksinimi → plastik/genel cerrahi","Need for wide excision or reconstruction → plastic/general surgery"],
+     ["Ağır ağrı, psikososyal yük, depresyon veya intihar düşüncesi → psikiyatri/destek","Severe pain, psychosocial burden, depression, or suicidal ideation → psychiatry/support"]
+   ]
+ },
+ references:[
+   "Zouboulis CC, Del Marmol V, Mrowietz U, Prens EP, Tzellos T, Jemec GBE. Hidradenitis Suppurativa/Acne Inversa: Criteria for Diagnosis, Severity Assessment, Classification and Disease Evaluation. Dermatology. 2015;231(2):184-190.",
+   "Zouboulis CC, Desai N, Emtestam L, et al. European S1 guideline for the treatment of hidradenitis suppurativa/acne inversa. J Eur Acad Dermatol Venereol. 2015;29(4):619-644."
+ ]
+},
+
+/* ---- atopic ---- */
+{
+ id:"atopic",cat:"ecz",
+ name:{tr:"Atopik Dermatit",en:"Atopic Dermatitis"},
+ full:["Atopik Dermatit (Atopik Egzama)","Atopic Dermatitis (Atopic Eczema)"],
+ relatedCalcs:["SCORAD","EASI","POEM"],
+ sets:[
+
+ /* ---- UK Working Party ---- */
+ {
+   key:"ukwp",
+   tab:["UK Working Party","UK Working Party"],
+   name:"U.K. Working Party's Diagnostic Criteria (Williams et al., 1994)",
+   year:1994,
+   applicabilityNote:["Epidemiyolojik çalışmalar ve popülasyon taramaları için türetilmiş ve valide edilmiş, muayene gerektirmeyen (büyük ölçüde öyküye dayalı) bir tanı ölçütü setidir; klinik tanının yerini almaz. Şiddet ölçümü için SCORAD / EASI / POEM kullanılır.",
+                      "A largely history-based criteria set derived and validated for epidemiological studies and population surveys; it does not replace clinical diagnosis. Use SCORAD / EASI / POEM for severity assessment."],
+   scoringType:"mandatory-plus-n",
+   mandatory:{
+     label:["Zorunlu kriter — bulunmalıdır","Mandatory criterion — must be present"],
+     short:["Zorunlu","Mandatory"],
+     items:[
+       {id:"ukwp_m1",label:["Son 12 ay içinde kaşıntılı bir cilt durumu","An itchy skin condition in the last 12 months"],
+        hint:["Çocuklarda ebeveynin kaşıma veya sürtme (scratching/rubbing) bildirimi de kabul edilir.",
+              "In a child, parental report of scratching or rubbing is accepted."]}
+     ]
+   },
+   additional:{
+     label:["Ek kriterler — en az 3/5","Additional criteria — at least 3 of 5"],
+     short:["Ek","Additional"],
+     need:3,
+     items:[
+       {id:"ukwp_a1",label:["Deri kıvrımlarının tutulum öyküsü (dirsek içi, diz arkası, ayak bileği ön yüzü veya boyun çevresi)",
+                            "History of involvement of the skin creases (folds of elbows, behind the knees, fronts of ankles or around the neck)"],
+        hint:["10 yaş altı çocuklarda yanak tutulumu da bu kritere dahil edilir.",
+              "In children under 10 years, involvement of the cheeks is also included."]},
+       {id:"ukwp_a2",label:["Kişisel astım veya saman nezlesi (alerjik rinit) öyküsü",
+                            "Personal history of asthma or hay fever"],
+        hint:["4 yaş altı çocuklarda bunun yerine birinci derece akrabada atopik hastalık öyküsü kullanılır.",
+              "In children under 4 years, history of atopic disease in a first-degree relative is used instead."]},
+       {id:"ukwp_a3",label:["Son bir yıl içinde genel kuru cilt öyküsü",
+                            "History of generally dry skin in the last year"]},
+       {id:"ukwp_a4",label:["Döküntünün 2 yaşından önce başlaması",
+                            "Onset of rash under the age of 2 years"],
+        hint:["Bu kriter 4 yaş altı çocuklarda kullanılmaz.",
+              "This criterion is not used in children under 4 years."]},
+       {id:"ukwp_a5",label:["Görünür fleksural dermatit (muayenede)",
+                            "Visible flexural dermatitis (on examination)"],
+        hint:["4 yaş altı çocuklarda yanak/alın ve ekstremitelerin dış yüzlerini tutan dermatit de sayılır.",
+              "In children under 4 years, dermatitis affecting the cheeks/forehead and outer limbs also counts."]}
+     ]
+   }
+ },
+
+ /* ---- Hanifin & Rajka ---- */
+ {
+   key:"hanifin",
+   tab:["Hanifin–Rajka","Hanifin–Rajka"],
+   name:"Hanifin & Rajka Diagnostic Criteria (1980)",
+   year:1980,
+   applicabilityNote:["Orijinal ölçütlerde 23 minör bulgu yer alır; burada hasta başı kullanım için klinik olarak en yararlı alt küme (14 madde) listelenmiştir — minör bulgu listesi kısaltılmıştır. Tanı için en az 3 majör VE en az 3 minör bulgu gereklidir.",
+                      "The original criteria include 23 minor features; the minor-feature list here is abbreviated to the clinically most useful subset (14 items) for point-of-care use. Diagnosis requires at least 3 major AND at least 3 minor features."],
+   scoringType:"major-minor",
+   groups:[
+     {key:"major",label:["Majör bulgular — en az 3/4 gerekli","Major features — at least 3 of 4 required"],
+      short:["Majör","Major"],need:3,
+      items:[
+        {id:"hr_m1",label:["Kaşıntı (pruritus)","Pruritus"]},
+        {id:"hr_m2",label:["Tipik morfoloji ve dağılım","Typical morphology and distribution"],
+         hint:["Erişkinde fleksural likenifikasyon veya linearite; süt çocuğu ve çocukta yüz ve ekstansör tutulum.",
+               "Flexural lichenification or linearity in adults; facial and extensor involvement in infants and children."]},
+        {id:"hr_m3",label:["Kronik veya kronik tekrarlayıcı dermatit","Chronic or chronically relapsing dermatitis"]},
+        {id:"hr_m4",label:["Kişisel veya ailesel atopi öyküsü (astım, alerjik rinit, atopik dermatit)",
+                           "Personal or family history of atopy (asthma, allergic rhinitis, atopic dermatitis)"]}
+      ]},
+     {key:"minor",label:["Minör bulgular — en az 3 gerekli (kısaltılmış liste)","Minor features — at least 3 required (abbreviated list)"],
+      short:["Minör","Minor"],need:3,
+      items:[
+        {id:"hr_n1", label:["Kserozis (kuru cilt)","Xerosis"]},
+        {id:"hr_n2", label:["İktiyoz / palmar hiperlinearite / keratozis pilaris","Ichthyosis / palmar hyperlinearity / keratosis pilaris"]},
+        {id:"hr_n3", label:["Erken (tip I) deri testi reaktivitesi","Immediate (type I) skin-test reactivity"]},
+        {id:"hr_n4", label:["Yüksek serum IgE düzeyi","Raised serum IgE"]},
+        {id:"hr_n5", label:["Erken başlangıç yaşı","Early age of onset"]},
+        {id:"hr_n6", label:["Kutanöz enfeksiyonlara eğilim (özellikle S. aureus ve herpes simpleks) veya bozulmuş hücresel bağışıklık",
+                            "Tendency toward cutaneous infections (especially S. aureus and herpes simplex) or impaired cell-mediated immunity"]},
+        {id:"hr_n7", label:["Nonspesifik el veya ayak dermatitine eğilim","Tendency toward non-specific hand or foot dermatitis"]},
+        {id:"hr_n8", label:["Meme başı egzaması","Nipple eczema"]},
+        {id:"hr_n9", label:["Keilit","Cheilitis"]},
+        {id:"hr_n10",label:["Dennie–Morgan infraorbital kıvrımı","Dennie–Morgan infraorbital fold"]},
+        {id:"hr_n11",label:["Orbital koyulaşma (periorbital hiperpigmentasyon)","Orbital darkening"]},
+        {id:"hr_n12",label:["Pitiriazis alba","Pityriasis alba"]},
+        {id:"hr_n13",label:["Terlerken kaşıntı","Itch when sweating"]},
+        {id:"hr_n14",label:["Beyaz dermografizm veya gecikmiş beyazlaşma","White dermographism or delayed blanch"]}
+      ]}
+   ]
+ }
+
+ ],
+ differentials:[
+   ["Seboreik dermatit (özellikle süt çocuğunda)","Seborrhoeic dermatitis (especially in infants)"],
+   ["Alerjik veya irritan kontakt dermatit","Allergic or irritant contact dermatitis"],
+   ["Skabiyez","Scabies"],
+   ["Psoriazis (özellikle fleksural/invers tip)","Psoriasis (especially flexural/inverse type)"],
+   ["Kutanöz T hücreli lenfoma (mikozis fungoides)","Cutaneous T-cell lymphoma (mycosis fungoides)"],
+   ["Primer immün yetmezlikler (Wiskott–Aldrich, hiper-IgE sendromu) ve iktiyozlar","Primary immunodeficiencies (Wiskott–Aldrich, hyper-IgE syndrome) and ichthyoses"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Tanı kliniktir; rutin laboratuvar tetkiki gerekmez","Diagnosis is clinical; routine laboratory testing is not required"],
+     ["Şiddet ve izlem için SCORAD / EASI ve hasta bildirimli POEM kaydı","Record SCORAD / EASI and patient-reported POEM for severity and follow-up"],
+     ["Skabiyez şüphesinde deri kazıntısı/dermoskopi; sekonder enfeksiyon şüphesinde bakteriyel/viral sürüntü","Skin scraping/dermoscopy if scabies suspected; bacterial/viral swab if secondary infection suspected"],
+     ["Dirençli, atipik dağılımlı veya el/ayak sınırlı olguda yama testi (kontakt dermatit)","Patch testing in refractory, atypically distributed or hand/foot-limited disease (contact dermatitis)"],
+     ["Tedaviye dirençli erişkin eritrodermi/plaklarda biyopsi (CTCL dışlanması)","Biopsy in treatment-refractory adult erythroderma/plaques (to exclude CTCL)"]
+   ],
+   treatmentOrientation:[
+     ["Temel basamak: düzenli emolyan ile deri bariyer bakımı ve tetikleyicilerden kaçınma","Foundation: regular emollient-based barrier care and trigger avoidance"],
+     ["Alevlenmede bölgeye ve yaşa uygun potensde topikal kortikosteroid","Topical corticosteroid of site- and age-appropriate potency for flares"],
+     ["Yüz, göz çevresi ve kıvrımlarda steroid koruyucu olarak topikal kalsinörin inhibitörü / topikal PDE-4","Topical calcineurin inhibitor / topical PDE-4 as steroid-sparing options on face, periorbital area and folds"],
+     ["Sekonder bakteriyel kolonizasyon/enfeksiyonun tanınması ve tedavisi","Recognise and treat secondary bacterial colonisation/infection"],
+     ["Optimize topikal tedaviye dirençli orta-ağır hastalıkta fototerapi veya sistemik/biyolojik tedavi","Phototherapy or systemic/biologic therapy in moderate-to-severe disease refractory to optimised topical therapy"]
+   ],
+   referralFlags:[
+     ["Egzama herpetikum şüphesi (yaygın monomorf veziküller, oyuk erozyonlar, ateş) → ACİL","Suspected eczema herpeticum (widespread monomorphic vesicles, punched-out erosions, fever) → URGENT"],
+     ["Eritrodermi veya yaygın sekonder enfeksiyon → acil dermatoloji değerlendirmesi","Erythroderma or extensive secondary infection → urgent dermatology assessment"],
+     ["Optimize topikal tedaviye rağmen kontrolsüz orta-ağır hastalık → sistemik tedavi için dermatoloji","Uncontrolled moderate-to-severe disease despite optimised topical therapy → dermatology for systemic therapy"],
+     ["Süt çocuğunda büyüme geriliği, tekrarlayan sistemik enfeksiyon → immün yetmezlik açısından pediatri/immünoloji","Failure to thrive with recurrent systemic infections in an infant → paediatrics/immunology for immunodeficiency"],
+     ["Atipik morfoloji veya erişkinde yeni başlangıçlı dirençli dermatit → biyopsi/dermatoloji (CTCL)","Atypical morphology or new-onset refractory dermatitis in an adult → biopsy/dermatology (CTCL)"]
+   ]
+ },
+ references:[
+   "Williams HC, Burney PG, Hay RJ, et al. The U.K. Working Party's Diagnostic Criteria for Atopic Dermatitis. I. Derivation of a minimum set of discriminators for atopic dermatitis. Br J Dermatol. 1994;131(3):383-396.",
+   "Williams HC, Burney PG, Pembroke AC, Hay RJ. The U.K. Working Party's Diagnostic Criteria for Atopic Dermatitis. III. Independent hospital validation. Br J Dermatol. 1994;131(3):406-416.",
+   "Hanifin JM, Rajka G. Diagnostic features of atopic dermatitis. Acta Derm Venereol (Stockh). 1980;60(Suppl 92):44-47."
+ ]
+},
+
+/* ---- caspar ---- */
+{
+ id:"caspar",cat:"arth",
+ name:{tr:"Psoriatik Artrit",en:"Psoriatic Arthritis"},
+ full:["Psoriatik Artrit — CASPAR Sınıflandırma Kriterleri","Psoriatic Arthritis — CASPAR Classification Criteria"],
+ relatedCalcs:["PEST"],
+ sets:[
+   {
+     key:"caspar",
+     tab:["CASPAR 2006","CASPAR 2006"],
+     name:"CASPAR (ClASsification criteria for Psoriatic ARthritis), Taylor et al. 2006",
+     year:2006,
+     applicabilityNote:[
+       "CASPAR bir SINIFLANDIRMA kriteridir, tanı kriteri değildir. Yalnızca halihazırda yerleşmiş inflamatuar artiküler hastalığı (eklem, omurga veya entezyal) olan hastalara uygulanır; tarama amacıyla veya artriti olmayan psoriasis hastalarında kullanılmaz. Özgüllüğü yüksektir (%98,7), duyarlılığı %91,4'tür; negatif sonuç psoriatik artriti dışlamaz ve klinik tanının yerini almaz. Psoriasis kalemi hiyerarşiktir: mevcut psoriasis varsa kişisel/aile öyküsü ayrıca puanlanmaz.",
+       "CASPAR is a CLASSIFICATION criterion, not a diagnostic criterion. It is applied only to patients who already have established inflammatory articular disease (joint, spine, or entheseal); it is not a screening tool and is not used in psoriasis patients without arthritis. Specificity is high (98.7%) with sensitivity 91.4%; a negative result does not exclude psoriatic arthritis and does not replace clinical diagnosis. The psoriasis item is hierarchical: if current psoriasis is present, personal/family history is not scored in addition."
+     ],
+     scoringType:"points-banded",
+     items:[
+       {id:"cas_entry",
+        label:["ZORUNLU: Yerleşmiş inflamatuar artiküler hastalık (eklem, omurga veya entezyal)",
+               "MANDATORY: Established inflammatory articular disease (joint, spine, or entheseal)"],
+        hint:["Bu kriter yoksa CASPAR uygulanamaz; puanlama anlamsızdır.",
+              "Without this criterion CASPAR cannot be applied; the point score is meaningless."],
+        type:"choice",
+        options:[
+          ["Yok / gösterilmemiş — CASPAR uygulanamaz","Absent / not demonstrated — CASPAR not applicable",-99],
+          ["Var — inflamatuar eklem, omurga veya entez hastalığı mevcut","Present — inflammatory joint, spine, or entheseal disease",0]
+        ]},
+       {id:"cas_pso",
+        label:["Psoriasis kanıtı (yalnızca en yüksek geçerli seçenek puanlanır)",
+               "Evidence of psoriasis (only the single highest applicable option is scored)"],
+        hint:["Mevcut psoriasis = romatolog veya dermatolog tarafından bugün saptanan deri veya saçlı deri psoriasisi. Kişisel öykü yalnızca mevcut psoriasis yokken, aile öyküsü yalnızca mevcut psoriasis ve kişisel öykü yokken puanlanır.",
+              "Current psoriasis = psoriatic skin or scalp disease present today as judged by a rheumatologist or dermatologist. Personal history is scored only in the absence of current psoriasis; family history only in the absence of both current psoriasis and personal history."],
+        type:"choice",
+        options:[
+          ["Psoriasis yok ve öykü yok","No psoriasis and no history",0],
+          ["Ailede psoriasis öyküsü (birinci veya ikinci derece akrabada, hasta beyanına göre) — mevcut psoriasis ve kişisel öykü yokken",
+           "Family history of psoriasis (in a first- or second-degree relative, by patient report) — in the absence of current psoriasis and personal history",1],
+          ["Kişisel psoriasis öyküsü (hasta, aile hekimi, dermatolog, romatolog veya diğer yetkin sağlık çalışanından alınmış) — mevcut psoriasis yokken",
+           "Personal history of psoriasis (obtained from patient, family physician, dermatologist, rheumatologist, or other qualified health care provider) — in the absence of current psoriasis",1],
+          ["Mevcut psoriasis (bugün saptanan deri veya saçlı deri psoriasisi)",
+           "Current psoriasis (psoriatic skin or scalp disease present today)",2]
+        ]},
+       {id:"cas_nail",
+        label:["Tipik psoriatik tırnak distrofisi","Typical psoriatic nail dystrophy"],
+        hint:["Güncel fizik muayenede onikoliz, pitting (tırnak çukurcukları) ve/veya hiperkeratoz.",
+              "Onycholysis, pitting, and/or hyperkeratosis observed on current physical examination."],
+        points:1},
+       {id:"cas_rf",
+        label:["Romatoid faktör (RF) negatifliği","Rheumatoid factor (RF) negativity"],
+        hint:["Lateks dışında herhangi bir yöntemle, tercihen ELISA veya nefelometri ile negatif sonuç.",
+              "A negative result by any method except latex, preferably by ELISA or nephelometry."],
+        points:1},
+       {id:"cas_dact",
+        label:["Daktilit — mevcut veya öyküde","Dactylitis — current or history of"],
+        hint:["Mevcut daktilit = bir parmağın tamamının şişliği; ya da romatolog tarafından kaydedilmiş daktilit öyküsü.",
+              "Current dactylitis = swelling of an entire digit; or a history of dactylitis recorded by a rheumatologist."],
+        points:1},
+       {id:"cas_xray",
+        label:["Radyografik jukstaartiküler yeni kemik oluşumu",
+               "Radiographic juxta-articular new bone formation"],
+        hint:["El veya ayak direkt grafisinde eklem kenarlarına yakın, sınırları belirsiz ossifikasyon (osteofit oluşumu hariç).",
+              "Ill-defined ossification near joint margins (excluding osteophyte formation) on plain radiographs of the hand or foot."],
+        points:1}
+     ],
+     bands:[
+       {max:-1,label:["Zorunlu kriter yok — CASPAR uygulanamaz","Mandatory criterion absent — CASPAR not applicable"],met:false},
+       {max:2, label:["CASPAR kriterleri karşılanmadı (<3 puan)","CASPAR criteria not met (<3 points)"],met:false},
+       {       label:["CASPAR kriterleri karşılandı (≥3 puan)","CASPAR criteria met (≥3 points)"],met:true}
+     ]
+   }
+ ],
+ differentials:[
+   ["Romatoid artrit (RF/anti-CCP pozitif, simetrik poliartrit)","Rheumatoid arthritis (RF/anti-CCP positive, symmetric polyarthritis)"],
+   ["Aksiyel spondiloartrit / ankilozan spondilit","Axial spondyloarthritis / ankylosing spondylitis"],
+   ["Reaktif artrit","Reactive arthritis"],
+   ["Enteropatik artrit (inflamatuar bağırsak hastalığı ilişkili)","Enteropathic arthritis (inflammatory bowel disease-associated)"],
+   ["Gut / kalsiyum pirofosfat depo hastalığı","Gout / calcium pyrophosphate deposition disease"],
+   ["Eroziv el osteoartriti","Erosive hand osteoarthritis"]
+ ],
+ nextSteps:{
+   workup:[
+     ["RF ve anti-CCP (ayırıcı tanı ve CASPAR puanlaması için)","RF and anti-CCP (for differential diagnosis and CASPAR scoring)"],
+     ["El ve ayak direkt grafileri (jukstaartiküler yeni kemik oluşumu, erozyon)","Plain radiographs of hands and feet (juxta-articular new bone formation, erosions)"],
+     ["Tam deri ve tırnak muayenesi: saçlı deri, kulak arkası, umbilikus, gluteal aralık","Full skin and nail examination: scalp, retroauricular, umbilicus, gluteal cleft"],
+     ["CRP / ESR (yükselme olguların yaklaşık yarısında yoktur)","CRP / ESR (elevation absent in roughly half of cases)"],
+     ["Entezit/sakroiliit şüphesinde ultrasonografi veya MR","Ultrasound or MRI when enthesitis/sacroiliitis is suspected"]
+   ],
+   treatmentOrientation:[
+     ["Hafif oligoartiküler hastalıkta NSAİİ ve intraartiküler kortikosteroid ile başlanabilir","Mild oligoarticular disease may be started on NSAIDs and intra-articular corticosteroid"],
+     ["Periferik poliartritte konvansiyonel sentetik DMARD (metotreksat, leflunomid, sulfasalazin) düşünülür","Peripheral polyarthritis: consider conventional synthetic DMARDs (methotrexate, leflunomide, sulfasalazine)"],
+     ["Yetersiz yanıtta, aksiyel hastalıkta veya entezit baskın fenotipte biyolojik/hedefe yönelik sentetik tedaviye geçilir","Inadequate response, axial disease, or enthesitis-predominant phenotype: escalate to biologic/targeted synthetic therapy"],
+     ["Tedavi seçimi eşlik eden domenlere göre yapılır: deri, tırnak, aksiyel, üveit, inflamatuar bağırsak hastalığı","Treatment choice is guided by coexisting domains: skin, nail, axial, uveitis, inflammatory bowel disease"],
+     ["Kardiyometabolik komorbidite ve kilo yönetimi tedavinin parçasıdır","Cardiometabolic comorbidity and weight management are part of care"]
+   ],
+   referralFlags:[
+     ["Psoriasis hastasında inflamatuar eklem/sırt ağrısı veya şişlik → romatoloji","Inflammatory joint/back pain or swelling in a psoriasis patient → rheumatology"],
+     ["Eroziv veya hızlı ilerleyen hastalık → erken/acil romatoloji değerlendirmesi","Erosive or rapidly progressive disease → early/urgent rheumatology assessment"],
+     ["Üveit bulguları (ağrılı kırmızı göz, fotofobi) → oftalmoloji","Features of uveitis (painful red eye, photophobia) → ophthalmology"],
+     ["Kronik ishal, rektal kanama, kilo kaybı → gastroenteroloji","Chronic diarrhoea, rectal bleeding, weight loss → gastroenterology"],
+     ["Daktilit veya inflamatuar sırt ağrısı → hedefe yönelik görüntüleme ve romatoloji","Dactylitis or inflammatory back pain → targeted imaging and rheumatology"]
+   ]
+ },
+ references:[
+   "Taylor W, Gladman D, Helliwell P, Marchesoni A, Mease P, Mielants H; CASPAR Study Group. Classification criteria for psoriatic arthritis: development of new criteria from a large international study. Arthritis Rheum. 2006;54(8):2665-2673.",
+   "Coates LC, Conaghan PG, Emery P, Green MJ, Ibrahim G, MacIver H, Helliwell PS. Sensitivity and specificity of the classification of psoriatic arthritis criteria in early psoriatic arthritis. Arthritis Rheum. 2012;64(10):3150-3155."
+ ]
+}
 ];
 
 /* =====================================================================
@@ -1816,24 +2669,49 @@ function printResult(){
    DIAGNOSTIC CRITERIA ASSISTANT — engine
    ===================================================================== */
 const findCrit=id=>CRITERIA.find(c=>c.id===id);
+/* the criteria set currently shown (a disease may offer several, as tabs) */
+const activeSet=c=>c.sets[Math.min(state.critSet,c.sets.length-1)];
+
+/* points contributed by one item under the current selections */
+function itemPts(it){
+  if(it.type==="choice"){
+    const o=it.options[critChoice[it.id]??0];
+    return o?(o[2]||0):0;
+  }
+  return critChecked.has(it.id)?(it.points||0):0;
+}
+
+/* count-based sets expose groups; point-based sets render as one flat list */
+function critGroupsOf(cs){
+  if(cs.scoringType==="major-minor")return cs.groups;
+  if(cs.scoringType==="mandatory-plus-n")return [
+    {key:"mand",label:cs.mandatory.label,short:cs.mandatory.short,
+     need:cs.mandatory.items.length,items:cs.mandatory.items},
+    {key:"add", label:cs.additional.label,short:cs.additional.short,
+     need:cs.additional.need,items:cs.additional.items}
+  ];
+  return null;
+}
 
 function evalCriteria(cs){
-  if(cs.scoringType==="points-threshold"){
-    let pts=0;
-    cs.items.forEach(it=>{ if(critChecked.has(it.id)) pts+=(it.points||1); });
-    return {met:pts>=cs.threshold,score:pts,threshold:cs.threshold};
-  }
-  if(cs.scoringType==="major-minor"){
-    let allMet=true;
-    const detail=cs.groups.map(g=>{
+  const groups=critGroupsOf(cs);
+  if(groups){
+    let met=true;
+    const detail=groups.map(g=>{
       const have=g.items.filter(it=>critChecked.has(it.id)).length;
       const ok=have>=g.need;
-      if(!ok)allMet=false;
-      return {key:g.key,label:g.label,short:g.short,have,need:g.need,total:g.items.length,ok};
+      if(!ok)met=false;
+      return {key:g.key,short:g.short,have,need:g.need,total:g.items.length,ok};
     });
-    return {met:allMet,detail};
+    return {met,detail};
   }
-  return {met:false};
+  const score=cs.items.reduce((s,it)=>s+itemPts(it),0);
+  if(cs.scoringType==="points-banded"){
+    /* bands are ordered ascending; the final band carries no `max` and catches the rest */
+    const b=cs.bands.find(x=>x.max===undefined||score<=x.max)||cs.bands[cs.bands.length-1];
+    return {met:!!b.met,score,bandLabel:b.label};
+  }
+  return {met:score>=cs.threshold,score,threshold:cs.threshold};
 }
 
 /* ---------- criteria home ---------- */
@@ -1844,7 +2722,9 @@ function renderCritHome(){
   const list=CRITERIA.filter(c=>{
     if(state.critCat!=="all"&&c.cat!==state.critCat)return false;
     if(!q)return true;
-    const hay=(c.name.tr+" "+c.name.en+" "+c.full.join(" ")+" "+CRIT_CATS[c.cat].join(" ")).toLowerCase();
+    /* also match on criteria-set names, so searching "ALDEN" or "PARACELSUS" finds the disease */
+    const hay=(c.name.tr+" "+c.name.en+" "+c.full.join(" ")+" "+CRIT_CATS[c.cat].join(" ")+" "+
+               c.sets.map(s=>s.name+" "+s.tab.join(" ")).join(" ")).toLowerCase();
     return hay.includes(q);
   });
   app.innerHTML=`
@@ -1879,34 +2759,60 @@ function cardHTMLCrit(c){
     <span class="ab">${esc(t(c.name.tr,c.name.en))}</span>
     <span class="fn">${esc(t(...c.full))}</span>
     <span class="tg">${esc(t(CRIT_CATS[c.cat][0],CRIT_CATS[c.cat][1]))}</span>
+    <span class="sets">${c.sets.map(s=>esc(t(...s.tab))).join(" · ")}</span>
   </button>`;
 }
-function openCrit(id){critChecked=new Set();state.critId=id;state.critView="detail";render();}
+function resetCritInputs(){critChecked=new Set();critChoice={};}
+function openCrit(id){resetCritInputs();state.critSet=0;state.critId=id;state.critView="detail";render();}
 function goCritHome(){state.critView="home";state.critId=null;render();}
+function setCritSet(i){resetCritInputs();state.critSet=i;renderCritDetail();}
+/* hand off to an existing calculator instead of duplicating it here */
+function openCalcFromCrit(id){state.section="calc";state.view="detail";state.calc=id;render();}
+
+function critItemHTML(it,showPts){
+  const hint=it.hint?`<small class="crit-hint">${esc(t(...it.hint))}</small>`:"";
+  if(it.type==="choice"){
+    const cur=critChoice[it.id]??0;
+    return `<div class="crit-item choice">
+      <span class="cl">${esc(t(...it.label))}${hint}</span>
+      <select data-crit-choice="${it.id}">${it.options.map((o,i)=>
+        `<option value="${i}"${i===cur?" selected":""}>${esc(t(o[0],o[1]))} (${o[2]>0?"+":""}${o[2]})</option>`
+      ).join("")}</select>
+    </div>`;
+  }
+  const pts=showPts&&it.points?` <b style="color:var(--accent)">(${it.points>0?"+":""}${it.points} ${t("puan","pt")})</b>`:"";
+  const opt=it.optional?` <small>${esc(t("opsiyonel","optional"))}</small>`:"";
+  return `<label class="crit-item">
+    <input type="checkbox" data-crit-id="${it.id}"${critChecked.has(it.id)?" checked":""}>
+    <span>${esc(t(...it.label))}${pts}${opt}${hint}</span>
+  </label>`;
+}
 
 /* ---------- criteria detail ---------- */
 function renderCritDetail(){
-  const c=findCrit(state.critId),col=CRIT_CATS[c.cat][2],cs=c.criteriaSet;
-  let groupsHtml="";
-  if(cs.scoringType==="major-minor"){
-    groupsHtml=cs.groups.map(g=>`
-      <div class="crit-group">
-        <div class="crit-group-h"><span class="gt">${esc(t(...g.label))}</span><span class="gn" id="gn_${g.key}"></span></div>
-        ${g.items.map(it=>`
-          <label class="crit-item">
-            <input type="checkbox" data-crit-id="${it.id}" ${critChecked.has(it.id)?"checked":""}>
-            <span>${esc(t(...it.label))}</span>
-          </label>`).join("")}
-      </div>`).join("");
-  }else if(cs.scoringType==="points-threshold"){
-    groupsHtml=`<div class="crit-group">
-      ${cs.items.map(it=>`
-        <label class="crit-item">
-          <input type="checkbox" data-crit-id="${it.id}" ${critChecked.has(it.id)?"checked":""}>
-          <span>${esc(t(...it.label))} <b style="color:var(--accent)">(${it.points} ${t("puan","pt")})</b>${it.optional?` <small>${esc(t("opsiyonel","optional"))}</small>`:""}</span>
-        </label>`).join("")}
-    </div>`;
-  }
+  const c=findCrit(state.critId),col=CRIT_CATS[c.cat][2],cs=activeSet(c);
+  const groups=critGroupsOf(cs);
+  const groupsHtml=groups
+    ? groups.map(g=>`
+        <div class="crit-group">
+          <div class="crit-group-h"><span class="gt">${esc(t(...g.label))}</span><span class="gn" id="gn_${g.key}"></span></div>
+          ${g.items.map(it=>critItemHTML(it,false)).join("")}
+        </div>`).join("")
+    : `<div class="crit-group">${cs.items.map(it=>critItemHTML(it,true)).join("")}</div>`;
+
+  const tabsHtml=c.sets.length>1?`<div class="crit-tabs">${c.sets.map((s,i)=>
+    `<button class="crit-tab${i===state.critSet?" on":""}" data-set="${i}">${esc(t(...s.tab))}</button>`).join("")}</div>`:"";
+
+  const noteHtml=cs.applicabilityNote?`<div class="crit-note">ℹ️ ${esc(t(...cs.applicabilityNote))}</div>`:"";
+
+  const related=(c.relatedCalcs||[]).filter(findCalc);
+  const relHtml=related.length?`<div class="crit-related">
+      <h4>${esc(t(...CRIT_UI.relatedCalcs))} <small>${esc(t(...CRIT_UI.relatedHint))}</small></h4>
+      <div class="rl">${related.map(id=>{
+        const rc=findCalc(id);
+        return `<button class="relbtn" data-calc="${esc(id)}">${esc(rc.name)} <span>${esc(t(...rc.full))}</span></button>`;
+      }).join("")}</div>
+    </div>`:"";
 
   app.innerHTML=`
     <div class="wrap" style="--cc:${col}">
@@ -1915,7 +2821,9 @@ function renderCritDetail(){
       <div class="dhead">
         <h1>${esc(t(c.name.tr,c.name.en))} <span class="tg">${esc(t(CRIT_CATS[c.cat][0],CRIT_CATS[c.cat][1]))}</span></h1>
         <div class="dfull">${esc(t(...c.full))}</div>
+        ${tabsHtml}
         <div class="crit-setname">${esc(t(...CRIT_UI.criteriaSetLabel))}: ${esc(cs.name)}${cs.year?" ("+cs.year+")":""}</div>
+        ${noteHtml}
         <div style="display:flex;gap:8px;margin-top:10px">
           <button class="actbtn" id="critResetBtn" title="${esc(t(...UI.reset))}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/></svg></button>
@@ -1934,52 +2842,73 @@ function renderCritDetail(){
         <h4>${esc(t(...CRIT_UI.differentials))}</h4>
         <ul>${c.differentials.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
       </div>
+      ${relHtml}
       <div class="crit-refs">${esc(t(...CRIT_UI.references))}: ${c.references.map(esc).join(" · ")}</div>
     </div>`;
 
   document.getElementById("backCrit").onclick=goCritHome;
+  app.querySelectorAll(".crit-tab").forEach(b=>b.onclick=()=>setCritSet(+b.dataset.set));
   app.querySelectorAll("[data-crit-id]").forEach(cb=>{
     cb.onchange=()=>{
       if(cb.checked)critChecked.add(cb.dataset.critId); else critChecked.delete(cb.dataset.critId);
       updateCritResult(c);
     };
   });
-  document.getElementById("critResetBtn").onclick=()=>{critChecked=new Set();renderCritDetail();};
+  app.querySelectorAll("[data-crit-choice]").forEach(se=>{
+    se.onchange=()=>{critChoice[se.dataset.critChoice]=+se.value;updateCritResult(c);};
+  });
+  app.querySelectorAll(".relbtn").forEach(b=>b.onclick=()=>openCalcFromCrit(b.dataset.calc));
+  document.getElementById("critResetBtn").onclick=()=>{resetCritInputs();renderCritDetail();};
   document.getElementById("critPrintBtn").onclick=()=>printCritResult(c);
   updateCritResult(c);
 }
 
 function updateCritResult(c){
-  const cs=c.criteriaSet,r=evalCriteria(cs);
+  const cs=activeSet(c),r=evalCriteria(cs);
   const el=document.getElementById("critResult");
-  let detailHtml="";
-  if(cs.scoringType==="major-minor"){
+  let headline,detailHtml="";
+  if(r.detail){
     r.detail.forEach(d=>{
       const gnEl=document.getElementById("gn_"+d.key);
       if(gnEl)gnEl.textContent=`${d.have}/${d.total} (${t("gerekli","need")}: ${d.need})`;
     });
     detailHtml=r.detail.map(d=>`${esc(t(...d.short))}: ${d.have}/${d.total}`).join(" · ");
-  }else if(cs.scoringType==="points-threshold"){
+    headline=r.met?"✅ "+esc(t(...CRIT_UI.met)):"⬜ "+esc(t(...CRIT_UI.notMet));
+  }else if(cs.scoringType==="points-banded"){
+    detailHtml=`${esc(t(...CRIT_UI.score))}: ${r.score}`;
+    headline=(r.met?"✅ ":"⬜ ")+esc(t(...r.bandLabel));
+  }else{
     detailHtml=`${esc(t(...CRIT_UI.score))}: ${r.score} / ${t("eşik","threshold")} ${r.threshold}`;
+    headline=r.met?"✅ "+esc(t(...CRIT_UI.met)):"⬜ "+esc(t(...CRIT_UI.notMet));
   }
   el.className="crit-result"+(r.met?" met":"");
-  el.innerHTML=`<div class="rv">${r.met?"✅ "+esc(t(...CRIT_UI.met)):"⬜ "+esc(t(...CRIT_UI.notMet))}</div><div class="rd">${detailHtml}</div>`;
+  el.innerHTML=`<div class="rv">${headline}</div><div class="rd">${detailHtml}</div>`;
+}
+
+/* one-line summary of a set's outcome, shared by the result box and the printout */
+function critResultLine(cs,r){
+  if(cs.scoringType==="points-banded")return `${t(...r.bandLabel)} — ${t(...CRIT_UI.score)}: ${r.score}`;
+  let s=r.met?t(...CRIT_UI.met):t(...CRIT_UI.notMet);
+  if(cs.scoringType==="points-threshold")s+=` — ${t(...CRIT_UI.score)}: ${r.score}/${r.threshold}`;
+  else if(r.detail)s+=" — "+r.detail.map(d=>`${t(...d.short)} ${d.have}/${d.total}`).join(" · ");
+  return s;
 }
 
 /* ---------- criteria print report ---------- */
 function printCritResult(c){
-  const cs=c.criteriaSet,r=evalCriteria(cs);
-  let groupsHtml="";
-  if(cs.scoringType==="major-minor"){
-    groupsHtml=cs.groups.map(g=>`
-      <div class="pr-crit-g">${esc(t(...g.label))}</div>
-      ${g.items.map(it=>`<div class="pr-crit-item ${critChecked.has(it.id)?"on":""}"><span class="ck">${critChecked.has(it.id)?"☑":"☐"}</span> ${esc(t(...it.label))}</div>`).join("")}
-    `).join("");
-  }else{
-    groupsHtml=cs.items.map(it=>`<div class="pr-crit-item ${critChecked.has(it.id)?"on":""}"><span class="ck">${critChecked.has(it.id)?"☑":"☐"}</span> ${esc(t(...it.label))}${it.points?` (${it.points} ${t("puan","pt")})`:""}</div>`).join("");
-  }
-  let resultLine=r.met?t(...CRIT_UI.met):t(...CRIT_UI.notMet);
-  if(cs.scoringType==="points-threshold")resultLine+=` — ${t(...CRIT_UI.score)}: ${r.score}/${r.threshold}`;
+  const cs=activeSet(c),r=evalCriteria(cs),groups=critGroupsOf(cs);
+  const prItem=it=>{
+    if(it.type==="choice"){
+      const o=it.options[critChoice[it.id]??0];
+      return `<div class="pr-crit-item on"><span class="ck">▸</span> ${esc(t(...it.label))}: <b>${esc(t(o[0],o[1]))}</b> (${o[2]>0?"+":""}${o[2]})</div>`;
+    }
+    const on=critChecked.has(it.id);
+    return `<div class="pr-crit-item ${on?"on":""}"><span class="ck">${on?"☑":"☐"}</span> ${esc(t(...it.label))}${it.points?` (${it.points>0?"+":""}${it.points} ${t("puan","pt")})`:""}</div>`;
+  };
+  const groupsHtml=groups
+    ? groups.map(g=>`<div class="pr-crit-g">${esc(t(...g.label))}</div>${g.items.map(prItem).join("")}`).join("")
+    : cs.items.map(prItem).join("");
+  const resultLine=critResultLine(cs,r);
 
   document.getElementById("printArea").innerHTML=`
     <div class="pr-h">
