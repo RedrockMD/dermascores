@@ -1430,8 +1430,8 @@ const CALCS=[
 /* =====================================================================
    DIAGNOSTIC CRITERIA ASSISTANT — data
    Each entry: {id,cat,name,full:[tr,en],criteriaSet,differentials,nextSteps,references}
-   criteriaSet.scoringType: "major-minor" | "points-threshold" | "all-required"
-     major-minor:      groups:[{key,label:[tr,en],need,items:[{id,label:[tr,en],hint?:[tr,en]}]}]
+   criteriaSet.scoringType: "major-minor" | "points-threshold"
+     major-minor:      groups:[{key,label:[tr,en],short:[tr,en],need,items:[{id,label:[tr,en],hint?:[tr,en]}]}]
      points-threshold: items:[{id,label:[tr,en],points,optional?}], threshold:number
    ===================================================================== */
 const CRITERIA=[
@@ -1445,14 +1445,14 @@ const CRITERIA=[
    name:"von den Driesch (revize)",year:1994,
    scoringType:"major-minor",
    groups:[
-     {key:"major",label:["Major kriterler — ikisi de gerekli","Major criteria — both required"],need:2,
+     {key:"major",label:["Major kriterler — ikisi de gerekli","Major criteria — both required"],short:["Major","Major"],need:2,
       items:[
         {id:"m1",label:["Ani başlangıçlı tipik kutanöz lezyonlar (hassas/ağrılı eritematöz plak veya nodüller; bazen psödovezikül/püstül)",
                          "Abrupt onset of typical cutaneous lesions (tender/painful erythematous plaques or nodules; occasionally pseudovesicles/pustules)"]},
         {id:"m2",label:["Histopatoloji Sweet sendromu ile uyumlu (lökositoklastik vaskülit olmaksızın yoğun dermal nötrofilik infiltrasyon)",
                          "Histopathology consistent with Sweet syndrome (dense dermal neutrophilic infiltrate without leukocytoclastic vasculitis)"]}
       ]},
-     {key:"minor",label:["Minor kriterler — en az 2/4 gerekli","Minor criteria — at least 2 of 4 required"],need:2,
+     {key:"minor",label:["Minor kriterler — en az 2/4 gerekli","Minor criteria — at least 2 of 4 required"],short:["Minor","Minor"],need:2,
       items:[
         {id:"n1",label:["Öncesinde ilişkili enfeksiyon/aşılama VEYA eşlik eden inflamatuar hastalık, myeloproliferatif/malign hastalık ya da gebelik",
                          "Preceded by relevant infection/vaccination OR accompanied by inflammatory disease, myeloproliferative/malignant disease, or pregnancy"]},
@@ -1829,13 +1829,9 @@ function evalCriteria(cs){
       const have=g.items.filter(it=>critChecked.has(it.id)).length;
       const ok=have>=g.need;
       if(!ok)allMet=false;
-      return {key:g.key,label:g.label,have,need:g.need,total:g.items.length,ok};
+      return {key:g.key,label:g.label,short:g.short,have,need:g.need,total:g.items.length,ok};
     });
     return {met:allMet,detail};
-  }
-  if(cs.scoringType==="all-required"){
-    const have=cs.items.filter(it=>critChecked.has(it.id)).length;
-    return {met:have===cs.items.length,have,total:cs.items.length};
   }
   return {met:false};
 }
@@ -1910,14 +1906,6 @@ function renderCritDetail(){
           <span>${esc(t(...it.label))} <b style="color:var(--accent)">(${it.points} ${t("puan","pt")})</b>${it.optional?` <small>${esc(t("opsiyonel","optional"))}</small>`:""}</span>
         </label>`).join("")}
     </div>`;
-  }else if(cs.scoringType==="all-required"){
-    groupsHtml=`<div class="crit-group">
-      ${cs.items.map(it=>`
-        <label class="crit-item">
-          <input type="checkbox" data-crit-id="${it.id}" ${critChecked.has(it.id)?"checked":""}>
-          <span>${esc(t(...it.label))}</span>
-        </label>`).join("")}
-    </div>`;
   }
 
   app.innerHTML=`
@@ -1970,11 +1958,9 @@ function updateCritResult(c){
       const gnEl=document.getElementById("gn_"+d.key);
       if(gnEl)gnEl.textContent=`${d.have}/${d.total} (${t("gerekli","need")}: ${d.need})`;
     });
-    detailHtml=r.detail.map(d=>`${esc(t(...d.label).split("—")[0].trim())}: ${d.have}/${d.total}`).join(" · ");
+    detailHtml=r.detail.map(d=>`${esc(t(...d.short))}: ${d.have}/${d.total}`).join(" · ");
   }else if(cs.scoringType==="points-threshold"){
     detailHtml=`${esc(t(...CRIT_UI.score))}: ${r.score} / ${t("eşik","threshold")} ${r.threshold}`;
-  }else if(cs.scoringType==="all-required"){
-    detailHtml=`${r.have} / ${r.total}`;
   }
   el.className="crit-result"+(r.met?" met":"");
   el.innerHTML=`<div class="rv">${r.met?"✅ "+esc(t(...CRIT_UI.met)):"⬜ "+esc(t(...CRIT_UI.notMet))}</div><div class="rd">${detailHtml}</div>`;
