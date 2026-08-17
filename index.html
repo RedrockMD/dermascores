@@ -238,6 +238,62 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
   .pr-score{font-size:16px;font-weight:800;margin:10px 0;padding:10px;border:2px solid #000}
   .pr-disc{font-size:10px;color:#555;margin-top:18px;border-top:1px solid #999;padding-top:8px}
 }
+
+/* ---------- Diagnostic Criteria Assistant ---------- */
+.sec-toggle{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px}
+.sec-toggle button{padding:7px 12px;border-radius:9px;font-weight:700;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.sec-toggle button.on{background:var(--accent);color:#fff}
+
+.crit-banner{
+  display:flex;align-items:flex-start;gap:8px;
+  background:color-mix(in srgb,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
+  color:var(--text);border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin:12px 0;
+}
+.crit-banner b{color:var(--warn)}
+
+.crit-groups{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.crit-group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.crit-group-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+.crit-group-h .gt{font-weight:750;font-size:14px}
+.crit-group-h .gn{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.crit-item{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:9px;cursor:pointer}
+.crit-item:hover{background:var(--surface2)}
+.crit-item input{margin-top:3px;width:17px;height:17px;accent-color:var(--accent);flex:none}
+.crit-item span{font-size:14px;line-height:1.4}
+.crit-item small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
+.crit-result{margin-top:16px;padding:16px;border-radius:var(--r);border:2px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.crit-result.met{border-color:color-mix(in srgb,var(--ok) 55%,transparent);background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.crit-result .rv{font-size:19px;font-weight:850}
+.crit-result.met .rv{color:var(--ok)}
+.crit-result .rd{font-size:13px;color:var(--muted);line-height:1.5}
+
+.crit-next{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:16px}
+.crit-next .col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.crit-next .col h4{font-size:13px;font-weight:750;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.crit-next .col ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.crit-next .col li{font-size:13px;line-height:1.4;color:var(--text)}
+
+.crit-diff{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.crit-diff h4{font-size:13px;font-weight:750;margin-bottom:8px}
+.crit-diff ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.crit-diff li{font-size:13px;color:var(--muted)}
+
+.crit-refs{margin-top:14px;font-size:11.5px;color:var(--faint);line-height:1.6}
+.crit-setname{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+@media print{
+  .crit-banner,.sec-toggle{display:none!important}
+  .pr-crit-groups{margin:10px 0}
+  .pr-crit-g{font-weight:800;font-size:12px;margin:8px 0 3px}
+  .pr-crit-item{font-size:11.5px;padding:2px 0}
+  .pr-crit-item.on{font-weight:700}
+  .pr-crit-item .ck{display:inline-block;width:12px}
+  .pr-next{margin-top:10px}
+  .pr-next h5{font-size:11.5px;font-weight:800;margin:8px 0 3px}
+  .pr-next ul{margin:0 0 0 16px;padding:0;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -289,6 +345,10 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
     <span class="nm">Derma<b>Scores</b></span>
   </div>
   <div class="hbtns">
+    <div class="sec-toggle" id="secToggle">
+      <button id="secCalcBtn" class="on">Skorlar</button>
+      <button id="secCritBtn">Tanı Kriterleri</button>
+    </div>
     <button class="iconbtn" id="langBtn" title="Language">TR</button>
     <button class="iconbtn" id="themeBtn" title="Theme">☾</button>
   </div>
@@ -311,7 +371,9 @@ footer .sig{margin-top:12px;font-size:12px;color:var(--faint);font-weight:650;le
    ===================================================================== */
 
 /* ---------- state ---------- */
-const state={lang:"tr",theme:"dark",view:"home",calc:null,query:"",cat:"all"};
+const state={lang:"tr",theme:"dark",section:"calc",view:"home",calc:null,query:"",cat:"all",
+             critView:"home",critId:null,critQuery:"",critCat:"all"};
+let critChecked=new Set();
 
 /* ---------- i18n helper ---------- */
 const t=(tr,en)=>state.lang==="tr"?tr:en;
@@ -332,12 +394,38 @@ const UI={
   print:["PDF / Yazdır","PDF / Print"],
   copied:["Sonuç panoya kopyalandı","Result copied to clipboard"],
   cleared:["Alanlar sıfırlandı","Inputs reset"],
-  disc:["<b>Tıbbi sorumluluk reddi.</b> Bu uygulama yalnızca eğitim ve klinik karar desteği amaçlıdır; profesyonel tıbbi değerlendirmenin yerine geçmez. Sonuçları hastanın klinik bağlamında yorumlayınız.",
-        "<b>Medical disclaimer.</b> This app is for education and clinical decision support only and is not a substitute for professional medical judgment. Interpret all results within the patient's clinical context."],
+  disc:["<b>Tıbbi sorumluluk reddi.</b> Bu uygulama yalnızca eğitim ve klinik karar desteği amaçlıdır; profesyonel tıbbi değerlendirmenin yerine geçmez. Sonuçları hastanın klinik bağlamında yorumlayınız.<br><b>Bu bir deneme sürümüdür ve hatalar içerebilir; önemli bilgileri mutlaka ikinci bir kaynaktan kontrol ediniz.</b>",
+        "<b>Medical disclaimer.</b> This app is for education and clinical decision support only and is not a substitute for professional medical judgment. Interpret all results within the patient's clinical context.<br><b>This is a trial/beta version and may contain errors; please double-check any important information.</b>"],
   reportTitle:["DermaScores — Klinik Skor Raporu","DermaScores — Clinical Score Report"],
   date:["Tarih","Date"],
   result:["Sonuç","Result"],
   interp:["Yorum","Interpretation"]
+};
+
+/* ---------- Diagnostic Criteria Assistant — UI strings ---------- */
+const CRIT_UI={
+  navLabel:["Tanı Kriterleri","Diagnostic Criteria"],
+  calcNavLabel:["Skorlar","Calculators"],
+  title:["Tanı Kriterleri Asistanı","Diagnostic Criteria Assistant"],
+  tagline:["Resmi tanı kriterlerine göre hızlı checklist ve klinik yönlendirme","Quick checklist and clinical guidance based on formal diagnostic criteria"],
+  search:["Hastalık ara…","Search disease…"],
+  banner:["<b>Klinik karar desteği.</b> Bu araç hekim değerlendirmesinin yerini tutmaz; hasta karşısında hekim tarafından doldurulan bir hatırlatma/checklist aracıdır.",
+          "<b>Clinical decision support.</b> This tool does not replace physician judgment; it is a checklist/reminder aid meant to be filled in by a physician at the point of care."],
+  criteriaSetLabel:["Kriter Seti","Criteria Set"],
+  met:["Kriterleri karşılıyor","Meets criteria"],
+  notMet:["Kriterleri karşılamıyor","Does not meet criteria"],
+  score:["Puan","Score"],
+  nextSteps:["Sıradaki Adımlar","Next Steps"],
+  workup:["Tetkik","Workup"],
+  treatment:["Tedavi Yönelimi","Treatment Orientation"],
+  referral:["Sevk Kriterleri","Referral Criteria"],
+  differentials:["Sık Karışan Ayırıcı Tanılar","Common Differential Diagnoses"],
+  references:["Kaynaklar","References"],
+  reset:["Sıfırla","Reset"],
+  print:["PDF / Yazdır","PDF / Print"],
+  reportTitle:["Tanı Kriterleri Değerlendirme Raporu","Diagnostic Criteria Assessment Report"],
+  none:["Sonuç bulunamadı","No results found"],
+  all:["Tümü","All"]
 };
 
 /* ---------- categories ---------- */
@@ -356,6 +444,16 @@ const CATS={
   itch:["Kaşıntı","Pruritus","#4ade80"],
   gen :["Genel","General","#94a3b8"],
   im  :["Dahiliye","Internal medicine","#2dd4bf"]
+};
+
+/* ---------- diagnostic-criteria categories ---------- */
+const CRIT_CATS={
+  neut:["Nötrofilik dermatoz","Neutrophilic dermatosis","#f97316"],
+  vasc:["Vaskülit / Otoinflamatuar","Vasculitis / Autoinflammatory","#e11d48"],
+  bulld:["Büllöz","Bullous","#fbbf24"],
+  drug :["Ciddi ilaç reaksiyonu","Severe drug reaction","#dc2626"],
+  peds :["Pediatrik vaskülit","Pediatric vasculitis","#22d3ee"],
+  hsx  :["Hidradenitis","Hidradenitis","#f472b6"]
 };
 
 /* ---------- builders & math helpers ---------- */
@@ -1330,6 +1428,132 @@ const CALCS=[
 ];
 
 /* =====================================================================
+   DIAGNOSTIC CRITERIA ASSISTANT — data
+   Each entry: {id,cat,name,full:[tr,en],criteriaSet,differentials,nextSteps,references}
+   criteriaSet.scoringType: "major-minor" | "points-threshold"
+     major-minor:      groups:[{key,label:[tr,en],short:[tr,en],need,items:[{id,label:[tr,en],hint?:[tr,en]}]}]
+     points-threshold: items:[{id,label:[tr,en],points,optional?}], threshold:number
+   ===================================================================== */
+const CRITERIA=[
+
+/* ---- Sweet Syndrome ---- */
+{
+ id:"sweet",cat:"neut",
+ name:{tr:"Sweet Sendromu",en:"Sweet Syndrome"},
+ full:["Sweet Sendromu (Akut Febril Nötrofilik Dermatoz)","Sweet Syndrome (Acute Febrile Neutrophilic Dermatosis)"],
+ criteriaSet:{
+   name:"von den Driesch (revize)",year:1994,
+   scoringType:"major-minor",
+   groups:[
+     {key:"major",label:["Major kriterler — ikisi de gerekli","Major criteria — both required"],short:["Major","Major"],need:2,
+      items:[
+        {id:"m1",label:["Ani başlangıçlı tipik kutanöz lezyonlar (hassas/ağrılı eritematöz plak veya nodüller; bazen psödovezikül/püstül)",
+                         "Abrupt onset of typical cutaneous lesions (tender/painful erythematous plaques or nodules; occasionally pseudovesicles/pustules)"]},
+        {id:"m2",label:["Histopatoloji Sweet sendromu ile uyumlu (lökositoklastik vaskülit olmaksızın yoğun dermal nötrofilik infiltrasyon)",
+                         "Histopathology consistent with Sweet syndrome (dense dermal neutrophilic infiltrate without leukocytoclastic vasculitis)"]}
+      ]},
+     {key:"minor",label:["Minor kriterler — en az 2/4 gerekli","Minor criteria — at least 2 of 4 required"],short:["Minor","Minor"],need:2,
+      items:[
+        {id:"n1",label:["Öncesinde ilişkili enfeksiyon/aşılama VEYA eşlik eden inflamatuar hastalık, myeloproliferatif/malign hastalık ya da gebelik",
+                         "Preceded by relevant infection/vaccination OR accompanied by inflammatory disease, myeloproliferative/malignant disease, or pregnancy"]},
+        {id:"n2",label:["Ateş (>38°C) ve/veya konstitüsyonel semptomlar (halsizlik, artralji)",
+                         "Fever (>38°C) and/or constitutional symptoms (malaise, arthralgia)"]},
+        {id:"n3",label:["Laboratuvar: aşağıdakilerden en az 3'ü — ESR>20mm/sa, CRP pozitif, nötrofil >%70, lökosit >8000/mm³",
+                         "Laboratory: at least 3 of the following — ESR>20mm/h, positive CRP, neutrophils >70%, leukocytes >8000/mm³"]},
+        {id:"n4",label:["Sistemik kortikosteroid veya potasyum iyodür tedavisine mükemmel yanıt",
+                         "Excellent response to treatment with systemic corticosteroids or potassium iodide"]}
+      ]}
+   ]
+ },
+ differentials:[
+   ["Piyoderma gangrenozum","Pyoderma gangrenosum"],
+   ["Eritema nodozum","Erythema nodosum"],
+   ["Bağırsak-ilişkili dermatoz-artrit sendromu","Bowel-associated dermatosis-arthritis syndrome"],
+   ["Selülit (özellikle tek lezyonda)","Cellulitis (especially with a solitary lesion)"],
+   ["Lökositoklastik vaskülit","Leukocytoclastic vasculitis"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Tam kan sayımı + periferik yayma (nötrofili)","Complete blood count + peripheral smear (neutrophilia)"],
+     ["CRP / ESR","CRP / ESR"],
+     ["Tanısal doğrulama için cilt biyopsisi","Skin biopsy for diagnostic confirmation"],
+     ["Altta yatan neden taraması: enfeksiyon odağı, ilaç öyküsü, gebelik","Screen for underlying cause: infection focus, drug history, pregnancy"],
+     ["Tekrarlayan/atipik seyirde malignite/myeloproliferatif hastalık taraması","In recurrent/atypical course, screen for malignancy/myeloproliferative disease"]
+   ],
+   treatmentOrientation:[
+     ["Sistemik kortikosteroid ilk basamak tedavidir; yanıt genelde hızlı ve dramatiktir (tanısal ipucu)",
+      "Systemic corticosteroids are first-line; response is typically rapid and dramatic (diagnostic clue)"],
+     ["Steroid kontrendike/yanıtsız olgularda alternatif: kolşisin, dapson, potasyum iyodür",
+      "In steroid-contraindicated/refractory cases, alternatives: colchicine, dapsone, potassium iodide"],
+     ["Altta yatan neden (ilaç, malignite, enfeksiyon) varsa onun yönetimi/ortadan kaldırılması",
+      "If an underlying cause exists (drug, malignancy, infection), manage/remove it"]
+   ],
+   referralFlags:[
+     ["Malignite ilişkisi şüphesi (özellikle myeloid) → hematoloji/onkoloji","Suspected malignancy association (especially myeloid) → hematology/oncology"],
+     ["Tekrarlayan veya atipik seyir → ileri tetkik","Recurrent or atypical course → further workup"],
+     ["Sistemik tutulum bulguları (göz, eklem, iç organ) → ilgili branş","Systemic involvement (eye, joint, internal organ) → relevant specialty"]
+   ]
+ },
+ references:["von den Driesch P. Sweet's syndrome (acute febrile neutrophilic dermatosis). Br J Dermatol. 1994;131(4):535-541."]
+},
+
+/* ---- Behçet Disease ---- */
+{
+ id:"behcet",cat:"vasc",
+ name:{tr:"Behçet Hastalığı",en:"Behçet's Disease"},
+ full:["Behçet Hastalığı","Behçet's Disease"],
+ criteriaSet:{
+   name:"ICBD 2014 (International Criteria for Behçet's Disease)",year:2014,
+   scoringType:"points-threshold",
+   threshold:4,
+   items:[
+     {id:"ocular",  label:["Oküler lezyonlar (üveit, retinal vaskülit)","Ocular lesions (uveitis, retinal vasculitis)"],points:2},
+     {id:"genital", label:["Genital aftöz lezyonlar (aktif/skar)","Genital aphthosis (active/scarred)"],points:2},
+     {id:"oral",    label:["Oral aftöz lezyonlar","Oral aphthosis"],points:2},
+     {id:"skin",    label:["Cilt lezyonları (psödofolikülit, eritema nodozum benzeri, papülopüstüler lezyonlar, akneiform nodüller)",
+                            "Skin lesions (pseudofolliculitis, erythema-nodosum-like, papulopustular lesions, acneiform nodules)"],points:1},
+     {id:"neuro",   label:["Nörolojik bulgular","Neurological manifestations"],points:1},
+     {id:"vascular",label:["Vasküler bulgular (yüzeyel flebit, derin ven trombozu, büyük ven trombozu, arteriyel tromboz/anevrizma)",
+                            "Vascular manifestations (superficial phlebitis, deep vein thrombosis, large vein thrombosis, arterial thrombosis/aneurysm)"],points:1},
+     {id:"pathergy",label:["Pozitif paterji testi (yalnızca test uygulandıysa işaretleyin)","Positive pathergy test (check only if the test was performed)"],points:1,optional:true}
+   ]
+ },
+ differentials:[
+   ["Basit tekrarlayan aftöz stomatit","Simple recurrent aphthous stomatitis"],
+   ["Reaktif artrit / seronegatif spondiloartropati","Reactive arthritis / seronegative spondyloarthropathy"],
+   ["İnflamatuar bağırsak hastalığı ile ilişkili cilt/eklem tutulumu","Inflammatory bowel disease-associated skin/joint involvement"],
+   ["MAGIC sendromu (Mouth And Genital ulcers with Inflamed Cartilage)","MAGIC syndrome (Mouth And Genital ulcers with Inflamed Cartilage)"],
+   ["Herpes simpleks ilişkili tekrarlayan aftöz lezyonlar","Herpes simplex-associated recurrent aphthous lesions"]
+ ],
+ nextSteps:{
+   workup:[
+     ["Detaylı öykü: oral/genital aft sıklığı-süresi, göz/cilt/eklem/GI/nörolojik/vasküler semptomlar",
+      "Detailed history: frequency/duration of oral/genital aphthae, ocular/skin/joint/GI/neurological/vascular symptoms"],
+     ["Oftalmoloji muayenesi (üveit taraması için)","Ophthalmology exam (to screen for uveitis)"],
+     ["Paterji testi (destekleyici, opsiyonel)","Pathergy test (supportive, optional)"],
+     ["HLA-B51 (destekleyici, tanı koydurucu değil)","HLA-B51 (supportive, not diagnostic)"],
+     ["Şüpheli sistemik tutulumda hedefe yönelik görüntüleme (vasküler/nöro-Behçet)","Targeted imaging if systemic involvement suspected (vascular/neuro-Behçet)"]
+   ],
+   treatmentOrientation:[
+     ["Mukokütanöz hastalıkta kolşisin (topikal/sistemik) ile başlanabilir","Mucocutaneous disease may be started on colchicine (topical/systemic)"],
+     ["Ciddi organ tutulumunda (göz, vasküler, nörolojik) sistemik immünsupresif/biyolojik tedavi gerekebilir",
+      "Severe organ involvement (ocular, vascular, neurological) may require systemic immunosuppressive/biologic therapy"],
+     ["Tedavi tutulan organa göre kişiselleştirilir; multidisipliner yaklaşım önerilir",
+      "Treatment is individualized by organ involvement; a multidisciplinary approach is recommended"]
+   ],
+   referralFlags:[
+     ["Oküler tutulum şüphesi → ACİL oftalmoloji konsültasyonu (görme kaybı riski)","Suspected ocular involvement → URGENT ophthalmology referral (risk of vision loss)"],
+     ["Nörolojik bulgular → nöroloji konsültasyonu","Neurological findings → neurology referral"],
+     ["Vasküler tutulum (DVT, anevrizma) → ilgili branş / acil değerlendirme","Vascular involvement (DVT, aneurysm) → relevant specialty / urgent evaluation"],
+     ["Gastrointestinal tutulum şüphesi → gastroenteroloji","Suspected GI involvement → gastroenterology"]
+   ]
+ },
+ references:["International Team for the Revision of the International Criteria for Behçet's Disease (ICBD). International Criteria for Behçet's Disease (ICBD): a collaborative study of 27 countries on the sensitivity and specificity of the new criteria. J Eur Acad Dermatol Venereol. 2014;28(3):338-347."]
+}
+
+];
+
+/* =====================================================================
    ENGINE
    ===================================================================== */
 const app=document.getElementById("app");
@@ -1348,13 +1572,24 @@ function render(){
   document.getElementById("langBtn").textContent=state.lang==="tr"?"TR":"EN";
   document.getElementById("themeBtn").textContent=state.theme==="dark"?"☾":"☀";
   document.getElementById("disc").innerHTML=t(...UI.disc);
-  if(state.view==="detail"&&findCalc(state.calc))renderDetail();
-  else renderHome();
+  document.getElementById("secCalcBtn").textContent=t(...CRIT_UI.calcNavLabel);
+  document.getElementById("secCritBtn").textContent=t(...CRIT_UI.navLabel);
+  document.getElementById("secCalcBtn").classList.toggle("on",state.section==="calc");
+  document.getElementById("secCritBtn").classList.toggle("on",state.section==="crit");
+  if(state.section==="crit"){
+    if(state.critView==="detail"&&findCrit(state.critId))renderCritDetail();
+    else renderCritHome();
+  }else{
+    if(state.view==="detail"&&findCalc(state.calc))renderDetail();
+    else renderHome();
+  }
   window.scrollTo(0,0);
 }
+function goSection(sec){state.section=sec;render();}
 
 /* ---------- home ---------- */
 function renderHome(){
+  const searchFocused=document.activeElement&&document.activeElement.id==="q";
   const q=state.query.trim().toLowerCase();
   const cats=["all",...Object.keys(CATS).filter(k=>CALCS.some(c=>c.cat===k))];
   const list=CALCS.filter(c=>{
@@ -1384,6 +1619,7 @@ function renderHome(){
   const qi=document.getElementById("q");
   qi.oninput=()=>{state.query=qi.value;renderHome();};
   qi.onkeydown=e=>{if(e.key==="Enter")qi.blur();};
+  if(searchFocused){qi.focus();const p=qi.value.length;qi.setSelectionRange(p,p);}
   app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;renderHome();});
   app.querySelectorAll(".ccard").forEach(b=>b.onclick=()=>openCalc(b.dataset.id));
 }
@@ -1396,7 +1632,7 @@ function cardHTML(c){
   </button>`;
 }
 function openCalc(id){state.view="detail";state.calc=id;render();}
-function goHome(){state.view="home";state.calc=null;render();}
+function goHome(){state.section="calc";state.view="home";state.calc=null;render();}
 
 /* ---------- detail ---------- */
 function renderDetail(){
@@ -1576,8 +1812,200 @@ function printResult(){
   window.print();
 }
 
+/* =====================================================================
+   DIAGNOSTIC CRITERIA ASSISTANT — engine
+   ===================================================================== */
+const findCrit=id=>CRITERIA.find(c=>c.id===id);
+
+function evalCriteria(cs){
+  if(cs.scoringType==="points-threshold"){
+    let pts=0;
+    cs.items.forEach(it=>{ if(critChecked.has(it.id)) pts+=(it.points||1); });
+    return {met:pts>=cs.threshold,score:pts,threshold:cs.threshold};
+  }
+  if(cs.scoringType==="major-minor"){
+    let allMet=true;
+    const detail=cs.groups.map(g=>{
+      const have=g.items.filter(it=>critChecked.has(it.id)).length;
+      const ok=have>=g.need;
+      if(!ok)allMet=false;
+      return {key:g.key,label:g.label,short:g.short,have,need:g.need,total:g.items.length,ok};
+    });
+    return {met:allMet,detail};
+  }
+  return {met:false};
+}
+
+/* ---------- criteria home ---------- */
+function renderCritHome(){
+  const searchFocused=document.activeElement&&document.activeElement.id==="cq";
+  const q=state.critQuery.trim().toLowerCase();
+  const cats=["all",...Object.keys(CRIT_CATS).filter(k=>CRITERIA.some(c=>c.cat===k))];
+  const list=CRITERIA.filter(c=>{
+    if(state.critCat!=="all"&&c.cat!==state.critCat)return false;
+    if(!q)return true;
+    const hay=(c.name.tr+" "+c.name.en+" "+c.full.join(" ")+" "+CRIT_CATS[c.cat].join(" ")).toLowerCase();
+    return hay.includes(q);
+  });
+  app.innerHTML=`
+    <div class="wrap">
+      <div class="crit-banner">${t(...CRIT_UI.banner)}</div>
+      <div class="hero">
+        <h1>${esc(t(...CRIT_UI.title))}</h1>
+        <p>${esc(t(...CRIT_UI.tagline))} · ${CRITERIA.length} ${t("hastalık","diseases")}</p>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+        <input id="cq" placeholder="${esc(t(...CRIT_UI.search))}" value="${esc(state.critQuery)}" autocomplete="off">
+      </div>
+      <div class="chips">
+        ${cats.map(k=>`<button class="chip ${state.critCat===k?"on":""}" data-cat="${k}">${
+          k==="all"?esc(t(...CRIT_UI.all)):esc(t(CRIT_CATS[k][0],CRIT_CATS[k][1]))}</button>`).join("")}
+      </div>
+      ${list.length?`<div class="grid">${list.map(cardHTMLCrit).join("")}</div>`
+        :`<div class="empty">${esc(t(...CRIT_UI.none))}</div>`}
+    </div>`;
+
+  const qi=document.getElementById("cq");
+  qi.oninput=()=>{state.critQuery=qi.value;renderCritHome();};
+  qi.onkeydown=e=>{if(e.key==="Enter")qi.blur();};
+  if(searchFocused){qi.focus();const p=qi.value.length;qi.setSelectionRange(p,p);}
+  app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.critCat=b.dataset.cat;renderCritHome();});
+  app.querySelectorAll(".ccard").forEach(b=>b.onclick=()=>openCrit(b.dataset.id));
+}
+function cardHTMLCrit(c){
+  const col=CRIT_CATS[c.cat][2];
+  return `<button class="ccard" data-id="${c.id}" style="--cc:${col}">
+    <span class="ab">${esc(t(c.name.tr,c.name.en))}</span>
+    <span class="fn">${esc(t(...c.full))}</span>
+    <span class="tg">${esc(t(CRIT_CATS[c.cat][0],CRIT_CATS[c.cat][1]))}</span>
+  </button>`;
+}
+function openCrit(id){critChecked=new Set();state.critId=id;state.critView="detail";render();}
+function goCritHome(){state.critView="home";state.critId=null;render();}
+
+/* ---------- criteria detail ---------- */
+function renderCritDetail(){
+  const c=findCrit(state.critId),col=CRIT_CATS[c.cat][2],cs=c.criteriaSet;
+  let groupsHtml="";
+  if(cs.scoringType==="major-minor"){
+    groupsHtml=cs.groups.map(g=>`
+      <div class="crit-group">
+        <div class="crit-group-h"><span class="gt">${esc(t(...g.label))}</span><span class="gn" id="gn_${g.key}"></span></div>
+        ${g.items.map(it=>`
+          <label class="crit-item">
+            <input type="checkbox" data-crit-id="${it.id}" ${critChecked.has(it.id)?"checked":""}>
+            <span>${esc(t(...it.label))}</span>
+          </label>`).join("")}
+      </div>`).join("");
+  }else if(cs.scoringType==="points-threshold"){
+    groupsHtml=`<div class="crit-group">
+      ${cs.items.map(it=>`
+        <label class="crit-item">
+          <input type="checkbox" data-crit-id="${it.id}" ${critChecked.has(it.id)?"checked":""}>
+          <span>${esc(t(...it.label))} <b style="color:var(--accent)">(${it.points} ${t("puan","pt")})</b>${it.optional?` <small>${esc(t("opsiyonel","optional"))}</small>`:""}</span>
+        </label>`).join("")}
+    </div>`;
+  }
+
+  app.innerHTML=`
+    <div class="wrap" style="--cc:${col}">
+      <button class="back" id="backCrit">‹ ${esc(t(...UI.back))}</button>
+      <div class="crit-banner">${t(...CRIT_UI.banner)}</div>
+      <div class="dhead">
+        <h1>${esc(t(c.name.tr,c.name.en))} <span class="tg">${esc(t(CRIT_CATS[c.cat][0],CRIT_CATS[c.cat][1]))}</span></h1>
+        <div class="dfull">${esc(t(...c.full))}</div>
+        <div class="crit-setname">${esc(t(...CRIT_UI.criteriaSetLabel))}: ${esc(cs.name)}${cs.year?" ("+cs.year+")":""}</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="actbtn" id="critResetBtn" title="${esc(t(...UI.reset))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v5h5"/></svg></button>
+          <button class="actbtn primary" id="critPrintBtn" title="${esc(t(...CRIT_UI.print))}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="6" y="14" width="12" height="7"/><path d="M6 17H3v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6h-3"/></svg></button>
+        </div>
+      </div>
+      <div class="crit-groups">${groupsHtml}</div>
+      <div class="crit-result" id="critResult"></div>
+      <div class="crit-next">
+        <div class="col"><h4>🧪 ${esc(t(...CRIT_UI.workup))}</h4><ul>${c.nextSteps.workup.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul></div>
+        <div class="col"><h4>💊 ${esc(t(...CRIT_UI.treatment))}</h4><ul>${c.nextSteps.treatmentOrientation.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul></div>
+        <div class="col"><h4>🚩 ${esc(t(...CRIT_UI.referral))}</h4><ul>${c.nextSteps.referralFlags.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul></div>
+      </div>
+      <div class="crit-diff">
+        <h4>${esc(t(...CRIT_UI.differentials))}</h4>
+        <ul>${c.differentials.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
+      </div>
+      <div class="crit-refs">${esc(t(...CRIT_UI.references))}: ${c.references.map(esc).join(" · ")}</div>
+    </div>`;
+
+  document.getElementById("backCrit").onclick=goCritHome;
+  app.querySelectorAll("[data-crit-id]").forEach(cb=>{
+    cb.onchange=()=>{
+      if(cb.checked)critChecked.add(cb.dataset.critId); else critChecked.delete(cb.dataset.critId);
+      updateCritResult(c);
+    };
+  });
+  document.getElementById("critResetBtn").onclick=()=>{critChecked=new Set();renderCritDetail();};
+  document.getElementById("critPrintBtn").onclick=()=>printCritResult(c);
+  updateCritResult(c);
+}
+
+function updateCritResult(c){
+  const cs=c.criteriaSet,r=evalCriteria(cs);
+  const el=document.getElementById("critResult");
+  let detailHtml="";
+  if(cs.scoringType==="major-minor"){
+    r.detail.forEach(d=>{
+      const gnEl=document.getElementById("gn_"+d.key);
+      if(gnEl)gnEl.textContent=`${d.have}/${d.total} (${t("gerekli","need")}: ${d.need})`;
+    });
+    detailHtml=r.detail.map(d=>`${esc(t(...d.short))}: ${d.have}/${d.total}`).join(" · ");
+  }else if(cs.scoringType==="points-threshold"){
+    detailHtml=`${esc(t(...CRIT_UI.score))}: ${r.score} / ${t("eşik","threshold")} ${r.threshold}`;
+  }
+  el.className="crit-result"+(r.met?" met":"");
+  el.innerHTML=`<div class="rv">${r.met?"✅ "+esc(t(...CRIT_UI.met)):"⬜ "+esc(t(...CRIT_UI.notMet))}</div><div class="rd">${detailHtml}</div>`;
+}
+
+/* ---------- criteria print report ---------- */
+function printCritResult(c){
+  const cs=c.criteriaSet,r=evalCriteria(cs);
+  let groupsHtml="";
+  if(cs.scoringType==="major-minor"){
+    groupsHtml=cs.groups.map(g=>`
+      <div class="pr-crit-g">${esc(t(...g.label))}</div>
+      ${g.items.map(it=>`<div class="pr-crit-item ${critChecked.has(it.id)?"on":""}"><span class="ck">${critChecked.has(it.id)?"☑":"☐"}</span> ${esc(t(...it.label))}</div>`).join("")}
+    `).join("");
+  }else{
+    groupsHtml=cs.items.map(it=>`<div class="pr-crit-item ${critChecked.has(it.id)?"on":""}"><span class="ck">${critChecked.has(it.id)?"☑":"☐"}</span> ${esc(t(...it.label))}${it.points?` (${it.points} ${t("puan","pt")})`:""}</div>`).join("");
+  }
+  let resultLine=r.met?t(...CRIT_UI.met):t(...CRIT_UI.notMet);
+  if(cs.scoringType==="points-threshold")resultLine+=` — ${t(...CRIT_UI.score)}: ${r.score}/${r.threshold}`;
+
+  document.getElementById("printArea").innerHTML=`
+    <div class="pr-h">
+      <div class="t">DermaScores</div>
+      <div style="text-align:right;font-size:12px">${esc(t(...CRIT_UI.reportTitle))}</div>
+    </div>
+    <div class="pr-meta">
+      <b>${esc(t(c.name.tr,c.name.en))}</b> — ${esc(t(...CRIT_UI.criteriaSetLabel))}: ${esc(cs.name)}${cs.year?" ("+cs.year+")":""}<br>
+      ${esc(t(...UI.date))}: ${esc(new Date().toLocaleString())}
+    </div>
+    <div class="pr-crit-groups">${groupsHtml}</div>
+    <div class="pr-score">${esc(resultLine)}</div>
+    <div class="pr-next">
+      <h5>${esc(t(...CRIT_UI.workup))}</h5><ul>${c.nextSteps.workup.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
+      <h5>${esc(t(...CRIT_UI.treatment))}</h5><ul>${c.nextSteps.treatmentOrientation.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
+      <h5>${esc(t(...CRIT_UI.referral))}</h5><ul>${c.nextSteps.referralFlags.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
+      <h5>${esc(t(...CRIT_UI.differentials))}</h5><ul>${c.differentials.map(x=>`<li>${esc(t(...x))}</li>`).join("")}</ul>
+    </div>
+    <div class="pr-disc">${t(...CRIT_UI.banner).replace(/<\/?b>/g,"")}</div>`;
+  window.print();
+}
+
 /* ---------- header controls ---------- */
 document.getElementById("brand").onclick=goHome;
+document.getElementById("secCalcBtn").onclick=()=>goSection("calc");
+document.getElementById("secCritBtn").onclick=()=>goSection("crit");
 document.getElementById("langBtn").onclick=()=>{state.lang=state.lang==="tr"?"en":"tr";render();};
 document.getElementById("themeBtn").onclick=()=>{
   state.theme=state.theme==="dark"?"light":"dark";
