@@ -508,6 +508,24 @@ const areaOpts=()=>[0,1,2,3,4,5,6].map(n=>[n,t(
 const band=(x,arr)=>{for(const e of arr){if(x<=e[0])return{cls:e[1],txt:t(e[2],e[3])};}const l=arr[arr.length-1];return{cls:l[1],txt:t(l[2],l[3])};};
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 
+/* 0–3 grade dropdown from four TR and four EN anchor words */
+const g03=(tr,en)=>[0,1,2,3].map(n=>[n,t(n+" — "+tr[n],n+" — "+en[n])]);
+/* the 18 anatomic sites shared by mLoSSI and LoSDI (localized scleroderma / morphea) */
+const LS_SITES=[
+  ["Baş / saçlı deri","Head / scalp"],["Boyun","Neck"],["Ön göğüs","Anterior chest"],
+  ["Karın","Abdomen"],["Üst sırt","Upper back"],["Alt sırt","Lower back"],
+  ["Sağ üst kol","Right upper arm"],["Sol üst kol","Left upper arm"],
+  ["Sağ ön kol","Right forearm"],["Sol ön kol","Left forearm"],
+  ["Sağ el","Right hand"],["Sol el","Left hand"],
+  ["Sağ uyluk","Right thigh"],["Sol uyluk","Left thigh"],
+  ["Sağ alt bacak","Right lower leg"],["Sol alt bacak","Left lower leg"],
+  ["Sağ ayak","Right foot"],["Sol ayak","Left foot"]];
+/* three region blocks, each row of the grid holding one site's parameters */
+const lsBlocks=(mk)=>[[t("Baş ve gövde","Head and trunk"),0,6],
+                      [t("Üst ekstremiteler","Upper limbs"),6,12],
+                      [t("Alt ekstremiteler","Lower limbs"),12,18]]
+  .map(([title,a,b])=>blk(title,LS_SITES.slice(a,b).flatMap(([tr,en],k)=>mk(a+k,t(tr,en))),{cols:3,full:true}));
+
 /* =====================================================================
    CALCULATOR DEFINITIONS
    Each: {id,cat,name,full:[tr,en],about:[tr,en],range,form(),calc(v)}
@@ -1046,6 +1064,87 @@ const CALCS=[
    let s=0;for(let i=0;i<17;i++)s+=+v("s"+i);
    return {score:s,fmt:String(s),
      band:band(s,[[14,"ok","Hafif","Mild"],[29,"warn","Orta","Moderate"],[Infinity,"bad","Şiddetli","Severe"]])};
+ }
+},
+
+/* ---- mLoSSI ---- */
+{
+ id:"mLoSSI",cat:"ctd",name:"mLoSSI",
+ full:["Modifiye Lokalize Skleroderma Deri Şiddet İndeksi","Modified Localized Scleroderma Skin Severity Index"],
+ about:["Morfea (lokalize skleroderma) AKTİVİTESİNİ ölçer. 18 anatomik bölgede eritem (0–3) ve deri kalınlığı (0–3) puanlanır; son 1 ay içinde yeni lezyon veya lezyon genişlemesi varsa 3 puan eklenir. Toplam 0–162. Aktivite: 0–4 hafif, 5–12 orta, ≥13 şiddetli. LoSCAT'ın aktivite bileşenidir; hasar için LoSDI kullanılır.",
+        "Measures ACTIVITY in morphea (localized scleroderma). At 18 anatomic sites, erythema (0–3) and skin thickness (0–3) are graded; a new lesion or lesion extension within the past month adds 3 points. Total 0–162. Activity: 0–4 mild, 5–12 moderate, ≥13 severe. It is the activity component of LoSCAT; use LoSDI for damage."],
+ range:"0–162",
+ form(){
+   const E=g03(["Yok","Pembe","Kırmızı","Koyu kırmızı"],["None","Pink","Red","Dark red"]);
+   const T=g03(["Yok","Hafif","Orta","Belirgin"],["None","Mild","Moderate","Marked"]);
+   const N=[[0,t("0 — Yok","0 — No")],[3,t("3 — Var","3 — Yes")]];
+   const b=lsBlocks((i,site)=>[
+     sel("e"+i,site+" · "+t("Eritem","Erythema"),E),
+     sel("t"+i,site+" · "+t("Kalınlık","Thickness"),T),
+     sel("n"+i,site+" · "+t("Yeni lezyon","New lesion"),N)]);
+   b[0].note=t("Yeni lezyon / lezyon genişlemesi son 1 ay içindir ve varlığında 3 puan değerindedir.",
+               "New lesion / lesion extension refers to the past month and is worth 3 points when present.");
+   return b;
+ },
+ calc(v){
+   let s=0;for(let i=0;i<18;i++)s+=(+v("e"+i))+(+v("t"+i))+(+v("n"+i));
+   return {score:s,fmt:String(s),
+     band:band(s,[[4,"ok","Hafif aktivite","Mild activity"],[12,"warn","Orta aktivite","Moderate activity"],
+                  [Infinity,"bad","Şiddetli aktivite","Severe activity"]])};
+ }
+},
+
+/* ---- LoSDI ---- */
+{
+ id:"LoSDI",cat:"ctd",name:"LoSDI",
+ full:["Lokalize Skleroderma Deri Hasar İndeksi","Localized Scleroderma Skin Damage Index"],
+ about:["Morfeada kalıcı HASARI ölçer. Aynı 18 anatomik bölgede dermal atrofi, subkutan atrofi ve dispigmentasyon 0–3 puanlanır (0 yok, 1 hafif, 2 orta, 3 belirgin). Toplam 0–162. Hasar: 0–10 hafif, 11–15 orta, ≥16 şiddetli. Aktivite değil hasar ölçer; ikisi birlikte LoSCAT'ı oluşturur.",
+        "Measures irreversible DAMAGE in morphea. At the same 18 anatomic sites, dermal atrophy, subcutaneous atrophy and dyspigmentation are graded 0–3 (0 none, 1 mild, 2 moderate, 3 marked). Total 0–162. Damage: 0–10 mild, 11–15 moderate, ≥16 severe. It measures damage rather than activity; together with mLoSSI it forms LoSCAT."],
+ range:"0–162",
+ form(){
+   const G=g03(["Yok","Hafif","Orta","Belirgin"],["None","Mild","Moderate","Marked"]);
+   const b=lsBlocks((i,site)=>[
+     sel("da"+i,site+" · "+t("Dermal atrofi","Dermal atrophy"),G),
+     sel("sa"+i,site+" · "+t("Subkutan atrofi","Subcutaneous atrophy"),G),
+     sel("dp"+i,site+" · "+t("Dispigmentasyon","Dyspigmentation"),G)]);
+   b[0].note=t("Dermal atrofi: parlak/ince deri, yüzeyel damarların belirginleşmesi. Subkutan atrofi: yağ/kas kaybına bağlı çöküntü. Dispigmentasyon: hiper- veya hipopigmentasyon.",
+               "Dermal atrophy: shiny/thin skin with prominent superficial vessels. Subcutaneous atrophy: depression from fat/muscle loss. Dyspigmentation: hyper- or hypopigmentation.");
+   return b;
+ },
+ calc(v){
+   let s=0;for(let i=0;i<18;i++)s+=(+v("da"+i))+(+v("sa"+i))+(+v("dp"+i));
+   return {score:s,fmt:String(s),
+     band:band(s,[[10,"ok","Hafif hasar","Mild damage"],[15,"warn","Orta hasar","Moderate damage"],
+                  [Infinity,"bad","Şiddetli hasar","Severe damage"]])};
+ }
+},
+
+/* ---- LoSCAT ---- */
+{
+ id:"LoSCAT",cat:"ctd",name:"LoSCAT",
+ full:["Lokalize Skleroderma Kutanöz Değerlendirme Aracı","Localized Scleroderma Cutaneous Assessment Tool"],
+ about:["Morfeada aktivite ve hasarın birlikte raporlandığı bileşik araçtır: mLoSSI (aktivite) + LoSDI (hasar), yanında hekim global aktivite (PGA-A) ve hasar (PGA-D) değerlendirmeleri. mLoSSI ve LoSDI hesaplayıcılarını ayrı doldurup toplamlarını buraya girin. İki indeksin toplamı için valide edilmiş bir şiddet eşiği yoktur; bileşenler ayrı ayrı yorumlanır.",
+        "The composite tool that reports activity and damage together in morphea: mLoSSI (activity) + LoSDI (damage), alongside the physician global assessments of activity (PGA-A) and damage (PGA-D). Fill in the mLoSSI and LoSDI calculators separately and enter their totals here. There is no validated severity cut-off for the sum of the two indices; the components are interpreted separately."],
+ range:"0–324",
+ form(){
+   return [blk(t("Bileşen toplamları","Component totals"),[
+     num("act",t("mLoSSI toplamı — aktivite (0–162)","mLoSSI total — activity (0–162)"),{max:162}),
+     num("dmg",t("LoSDI toplamı — hasar (0–162)","LoSDI total — damage (0–162)"),{max:162}),
+     num("pgaa",t("PGA-A — hekim global aktivite (0–100)","PGA-A — physician global activity (0–100)"),{max:100}),
+     num("pgad",t("PGA-D — hekim global hasar (0–100)","PGA-D — physician global damage (0–100)"),{max:100})
+   ],{cols:2,note:t("PGA-A ve PGA-D toplama dahil edilmez; ayrı izlenen görsel analog değerlendirmelerdir.",
+                    "PGA-A and PGA-D are not added into the total; they are separately tracked visual analogue assessments.")})];
+ },
+ calc(v){
+   const a=clamp(+v("act")||0,0,162),d=clamp(+v("dmg")||0,0,162),
+         pa=clamp(+v("pgaa")||0,0,100),pd=clamp(+v("pgad")||0,0,100);
+   const ab=band(a,[[4,"ok","hafif","mild"],[12,"warn","orta","moderate"],[Infinity,"bad","şiddetli","severe"]]);
+   const db=band(d,[[10,"ok","hafif","mild"],[15,"warn","orta","moderate"],[Infinity,"bad","şiddetli","severe"]]);
+   return {score:a+d,fmt:String(a+d),
+     parts:[[t("mLoSSI (aktivite)","mLoSSI (activity)"),a+" — "+ab.txt],
+            [t("LoSDI (hasar)","LoSDI (damage)"),d+" — "+db.txt],
+            [t("PGA-A","PGA-A"),String(pa)],
+            [t("PGA-D","PGA-D"),String(pd)]]};
  }
 },
 
