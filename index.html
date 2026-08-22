@@ -163,6 +163,25 @@ details.about .ab-body .rg{margin-top:8px;color:var(--text);font-weight:650;font
 .fld select:focus,.fld input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.16)}
 .fld input[type=range]{width:100%;height:44px;accent-color:var(--accent);background:transparent}
 
+/* tap-to-count stepper around every numeric field — lets a lesion count be
+   tallied at the bedside without leaving the field, while typing still works */
+.stepper{display:flex;gap:6px}
+.stepper input[type=number]{flex:1;min-width:0;text-align:center;font-variant-numeric:tabular-nums}
+/* the native spinner duplicates our buttons and steals width on desktop */
+.stepper input[type=number]::-webkit-outer-spin-button,
+.stepper input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.stp{
+  flex:none;width:46px;height:44px;border-radius:11px;
+  background:var(--surface2);border:1px solid var(--line);color:var(--text);
+  font-size:21px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:.1s;
+}
+.stp:hover{border-color:var(--accent)}
+.stp.on{background:var(--accent);border-color:transparent;color:#0b1018}
+@media(max-width:520px){.stp{width:52px}}
+
 /* ---------- Result bar ---------- */
 .resultbar{
   position:sticky;bottom:0;z-index:40;margin-top:16px;
@@ -2656,6 +2675,21 @@ function renderDetail(){
     if(id){const o=form.querySelector(`[data-out="${id}"]`);if(o)o.textContent=e.target.value;}
     update();
   });
+  /* stepper buttons: pointer drives the tap + hold-repeat, so click is only
+     bound for keyboard/assistive activation (detail 0) to avoid counting twice.
+     Release is handled on window, so dragging off a button still stops it. */
+  form.addEventListener("pointerdown",e=>{
+    const b=e.target.closest(".stp");
+    if(!b)return;
+    e.preventDefault();
+    holdBump(b);
+  });
+  form.addEventListener("click",e=>{
+    const b=e.target.closest(".stp");
+    if(!b)return;
+    e.preventDefault();
+    if(e.detail===0)bumpField(b);
+  });
   document.getElementById("resetBtn").onclick=()=>{renderDetail();toast(t(...UI.cleared));};
   document.getElementById("copyBtn").onclick=copyResult;
   document.getElementById("printBtn").onclick=printResult;
@@ -2685,10 +2719,46 @@ function itemHTML(it){
     return `<label class="fld"><span>${esc(it.label)}: <b data-out="${it.id}">${it.val}</b></span>
       <input type="range" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}"></label>`;
   }
+  const mode=it.step===1?"numeric":"decimal";
   return `<label class="fld"><span>${esc(it.label)}</span>
-    <input type="number" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}" inputmode="decimal">
+    <div class="stepper">
+      <button type="button" class="stp" data-bump="-1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Azalt","Decrease"))}">−</button>
+      <input type="number" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}" inputmode="${mode}">
+      <button type="button" class="stp" data-bump="1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Artır","Increase"))}">+</button>
+    </div>
     ${it.hint?`<small>${esc(it.hint)}</small>`:""}</label>`;
 }
+
+/* nudge a numeric field by one step, clamped, and let the form recompute */
+function bumpField(btn){
+  const inp=document.querySelector(`#calcForm [data-id="${btn.dataset.for}"]`);
+  if(!inp)return;
+  const step=+inp.step||1;
+  const min=inp.min===""?-Infinity:+inp.min,max=inp.max===""?Infinity:+inp.max;
+  const dec=(String(step).split(".")[1]||"").length;
+  let val=(+inp.value||0)+(+btn.dataset.bump)*step;
+  val=clamp(+val.toFixed(dec+2),min,max);
+  inp.value=dec?val.toFixed(dec):String(val);
+  inp.dispatchEvent(new Event("input",{bubbles:true}));
+}
+
+/* press-and-hold repeats, but only after a delay so a plain tap counts once */
+let heldBtn=null,heldTimer=null;
+function holdBump(btn){
+  releaseBump();
+  bumpField(btn);
+  heldBtn=btn;btn.classList.add("on");
+  let delay=500;
+  const tick=()=>{bumpField(btn);delay=Math.max(45,delay*0.75);heldTimer=setTimeout(tick,delay);};
+  heldTimer=setTimeout(tick,delay);
+}
+function releaseBump(){
+  clearTimeout(heldTimer);heldTimer=null;
+  if(heldBtn){heldBtn.classList.remove("on");heldBtn=null;}
+}
+/* released on window so dragging off the button (or losing the pointer) still stops it */
+["pointerup","pointercancel"].forEach(ev=>window.addEventListener(ev,releaseBump));
+window.addEventListener("blur",releaseBump);
 
 /* read a field value */
 function fieldVal(id){
