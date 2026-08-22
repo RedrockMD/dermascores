@@ -538,7 +538,12 @@ const CRIT_CATS={
 
 /* ---------- builders & math helpers ---------- */
 const gr=(a,b)=>{if(b===undefined){b=a;a=0;}const o=[];for(let i=a;i<=b;i++)o.push([i,String(i)]);return o;};
-const num=(id,label,o={})=>({type:"num",id,label,min:o.min??0,max:o.max??100,step:o.step??1,val:o.val??0,hint:o.hint});
+/* Turkish possessive suffix varies with how the number is read aloud:
+   9 -> "%9'u", 36 -> "%36'sı", 24 -> "%24'ü" */
+const POSS={1:"'i",9:"'u",18:"'i",24:"'ü",36:"'sı",40:"'ı"};
+const pctOf=w=>"%"+w+(POSS[w]||"'i");
+/* count:true adds +/- buttons — for fields tallied lesion by lesion at the bedside */
+const num=(id,label,o={})=>({type:"num",id,label,min:o.min??0,max:o.max??100,step:o.step??1,val:o.val??0,hint:o.hint,count:o.count});
 const sel=(id,label,opts,o={})=>({type:"sel",id,label,opts,val:o.val??(Array.isArray(opts[0])?opts[0][0]:opts[0]),hint:o.hint});
 const rng=(id,label,o={})=>({type:"rng",id,label,min:o.min??0,max:o.max??10,step:o.step??1,val:o.val??0});
 const blk=(title,items,o={})=>({title,items,note:o.note,full:o.full,cols:o.cols});
@@ -658,13 +663,17 @@ const CALCS=[
         "Percentage of body surface area involved. Enter the involved percentage of each region using the rule of nines. Practical rule: the patient's palm ≈ 1% BSA. For psoriasis/eczema <3% limited, 3–10% moderate, >10% extensive."],
  range:"0–100%",
  form(){
-   const R=[["hn","Baş & boyun (9%)","Head & neck (9%)"],["ra","Sağ kol (9%)","Right arm (9%)"],
-            ["la","Sol kol (9%)","Left arm (9%)"],["at","Ön gövde (18%)","Anterior trunk (18%)"],
-            ["pt","Arka gövde (18%)","Posterior trunk (18%)"],["rl","Sağ bacak (18%)","Right leg (18%)"],
-            ["ll","Sol bacak (18%)","Left leg (18%)"],["ge","Genital (1%)","Genitalia (1%)"]];
+   const R=[["hn","Baş & boyun","Head & neck",9],["ra","Sağ kol","Right arm",9],
+            ["la","Sol kol","Left arm",9],["at","Ön gövde","Anterior trunk",18],
+            ["pt","Arka gövde","Posterior trunk",18],["rl","Sağ bacak","Right leg",18],
+            ["ll","Sol bacak","Left leg",18],["ge","Genital","Genitalia",1]];
    return [
-     note(t("Her bölge için o bölgenin tutulum yüzdesini (0–100) girin.","Enter the involved percentage (0–100) of each region.")),
-     blk(t("Dokuzlar kuralı","Rule of nines"),R.map(([k,tr,en])=>num(k,t(tr,en),{max:100})),{cols:2})
+     note(t("Her kutuya, O BÖLGENİN kendi içinde yüzde kaçının tutulduğunu yazın (0–100) — tüm vücuda oranını değil. Örnek: baş-boyun bölgesinin yarısı tutulmuşsa 50 yazın; bu tüm vücudun %4,5'ine karşılık gelir.",
+            "In each box enter what percentage OF THAT REGION is involved (0–100) — not its share of the whole body. Example: if half of the head & neck is involved, enter 50; that equals 4.5% of the whole body.")),
+     blk(t("Dokuzlar kuralı","Rule of nines"),
+       R.map(([k,tr,en,w])=>num(k,t(tr,en),{max:100,hint:t(
+         `Bu bölge tüm vücudun ${pctOf(w)} — 100 yazılırsa toplama %${w} ekler`,
+         `This region is ${w}% of the whole body — entering 100 adds ${w}% to the total`)})),{cols:2})
    ];
  },
  calc(v){
@@ -717,13 +726,15 @@ const CALCS=[
  range:"0–103",
  form(){
    return [
-     blk(t("A — Tutulan alan (dokuzlar kuralı)","A — Extent (rule of nines)"),[
-       num("ahn",t("Baş & boyun (9%)","Head & neck (9%)"),{max:100}),
-       num("aul",t("Üst ekstremiteler (18%)","Upper limbs (18%)"),{max:100}),
-       num("atr",t("Gövde (36%)","Trunk (36%)"),{max:100}),
-       num("all",t("Alt ekstremiteler (36%)","Lower limbs (36%)"),{max:100}),
-       num("agen",t("Genital (1%)","Genitalia (1%)"),{max:100})
-     ],{cols:2,note:t("Her bölgenin tutulum yüzdesini girin.","Enter the involved % of each region.")}),
+     blk(t("A — Tutulan alan (dokuzlar kuralı)","A — Extent (rule of nines)"),
+       [["ahn","Baş & boyun","Head & neck",9],["aul","Üst ekstremiteler","Upper limbs",18],
+        ["atr","Gövde","Trunk",36],["all","Alt ekstremiteler","Lower limbs",36],
+        ["agen","Genital","Genitalia",1]]
+       .map(([k,tr,en,w])=>num(k,t(tr,en),{max:100,hint:t(
+         `Bu bölge tüm vücudun ${pctOf(w)} — 100 yazılırsa A'ya %${w} ekler`,
+         `This region is ${w}% of the whole body — entering 100 adds ${w}% to A`)})),
+       {cols:2,note:t("Her kutuya, O BÖLGENİN kendi içinde yüzde kaçının tutulduğunu yazın (0–100) — tüm vücuda oranını değil. Örnek: gövdenin yarısı tutulmuşsa 50 yazın; bu tüm vücudun %18'ine karşılık gelir.",
+                      "In each box enter what percentage OF THAT REGION is involved (0–100) — not its share of the whole body. Example: if half the trunk is involved, enter 50; that equals 18% of the whole body.")}),
      blk(t("B — Şiddet (her biri 0–3)","B — Intensity (each 0–3)"),[
        sel("b1",t("Eritem","Erythema"),gr(3)),
        sel("b2",t("Ödem / papülasyon","Edema / papulation"),gr(3)),
@@ -831,10 +842,11 @@ const CALCS=[
  range:"0+",
  form(){
    return [blk(t("Lezyon sayıları","Lesion counts"),[
-     num("n",t("Nodül sayısı","Number of nodules"),{max:200}),
-     num("a",t("Abse sayısı","Number of abscesses"),{max:200}),
-     num("f",t("Drene olan tünel / fistül sayısı","Draining tunnels / fistulas"),{max:200})
-   ])];
+     num("n",t("Nodül sayısı","Number of nodules"),{max:200,count:true}),
+     num("a",t("Abse sayısı","Number of abscesses"),{max:200,count:true}),
+     num("f",t("Drene olan tünel / fistül sayısı","Draining tunnels / fistulas"),{max:200,count:true})
+   ],{note:t("Muayene ederken bölge bölge sayabilmek için +/− tuşlarını kullanabilir ya da doğrudan sayıyı yazabilirsiniz.",
+             "Use the +/- keys to tally region by region while examining, or type the number directly.")})];
  },
  calc(v){
    const s=(+v("n"))+2*(+v("a"))+4*(+v("f"));
@@ -933,11 +945,15 @@ const CALCS=[
         "In alopecia areata the scalp is divided into 4 areas (vertex 40%, posterior 24%, right side 18%, left side 18%). The hair-loss % of each area is multiplied by its weight and summed. SALT score = total % scalp hair loss."],
  range:"0–100%",
  form(){
-   const R=[["v","Tepe / vertex (%40)","Vertex / top (40%)"],["b","Arka / oksiput (%24)","Posterior / occiput (24%)"],
-            ["r","Sağ yan (%18)","Right side (18%)"],["l","Sol yan (%18)","Left side (18%)"]];
+   const R=[["v","Tepe / vertex","Vertex / top",40],["b","Arka / oksiput","Posterior / occiput",24],
+            ["r","Sağ yan","Right side",18],["l","Sol yan","Left side",18]];
    return [
-     note(t("Her bölgede saçsız (kayıp) alan yüzdesini girin.","Enter the % of hairless (lost) area in each region.")),
-     blk(t("Saçlı deri bölgeleri","Scalp regions"),R.map(([k,tr,en])=>num(k,t(tr,en),{max:100})),{cols:2})
+     note(t("Her kutuya, O BÖLGENİN kendi içinde yüzde kaçının saçsız olduğunu yazın (0–100) — tüm saçlı deriye oranını değil. Örnek: tepe bölgesinin yarısı saçsızsa 50 yazın; bu SALT'a 20 puan ekler.",
+            "In each box enter what percentage OF THAT REGION is hairless (0–100) — not its share of the whole scalp. Example: if half the vertex is hairless, enter 50; that adds 20 points to SALT.")),
+     blk(t("Saçlı deri bölgeleri","Scalp regions"),
+       R.map(([k,tr,en,w])=>num(k,t(tr,en),{max:100,hint:t(
+         `Bu bölge saçlı derinin ${pctOf(w)} — 100 yazılırsa SALT'a ${w} puan ekler`,
+         `This region is ${w}% of the scalp — entering 100 adds ${w} points to SALT`)})),{cols:2})
    ];
  },
  calc(v){
@@ -2720,12 +2736,16 @@ function itemHTML(it){
       <input type="range" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}"></label>`;
   }
   const mode=it.step===1?"numeric":"decimal";
+  const input=`<input type="number" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}" inputmode="${mode}">`;
+  const body=it.count
+    ? `<div class="stepper">
+         <button type="button" class="stp" data-bump="-1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Azalt","Decrease"))}">−</button>
+         ${input}
+         <button type="button" class="stp" data-bump="1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Artır","Increase"))}">+</button>
+       </div>`
+    : input;
   return `<label class="fld"><span>${esc(it.label)}</span>
-    <div class="stepper">
-      <button type="button" class="stp" data-bump="-1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Azalt","Decrease"))}">−</button>
-      <input type="number" data-id="${it.id}" min="${it.min}" max="${it.max}" step="${it.step}" value="${it.val}" inputmode="${mode}">
-      <button type="button" class="stp" data-bump="1" data-for="${it.id}" tabindex="-1" aria-label="${esc(t("Artır","Increase"))}">+</button>
-    </div>
+    ${body}
     ${it.hint?`<small>${esc(it.hint)}</small>`:""}</label>`;
 }
 
