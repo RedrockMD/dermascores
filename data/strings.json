@@ -1,0 +1,174 @@
+{
+  "ui.tagline": {
+    "tr": "Klinik dermatoloji şiddet skorlama araçları",
+    "en": "Clinical dermatology severity scoring tools"
+  },
+  "ui.search": {
+    "tr": "Skor ara…",
+    "en": "Search scores…"
+  },
+  "ui.all": {
+    "tr": "Tümü",
+    "en": "All"
+  },
+  "ui.none": {
+    "tr": "Sonuç bulunamadı",
+    "en": "No scores found"
+  },
+  "ui.back": {
+    "tr": "Geri",
+    "en": "Back"
+  },
+  "ui.about": {
+    "tr": "Bilgi & yorumlama",
+    "en": "About & interpretation"
+  },
+  "ui.range": {
+    "tr": "Aralık",
+    "en": "Range"
+  },
+  "ui.patient": {
+    "tr": "Hasta adı / no — rapor için (opsiyonel)",
+    "en": "Patient name / ID — for report (optional)"
+  },
+  "ui.score": {
+    "tr": "Skor",
+    "en": "Score"
+  },
+  "ui.reset": {
+    "tr": "Sıfırla",
+    "en": "Reset"
+  },
+  "ui.copy": {
+    "tr": "Kopyala",
+    "en": "Copy"
+  },
+  "ui.print": {
+    "tr": "PDF / Yazdır",
+    "en": "PDF / Print"
+  },
+  "ui.copied": {
+    "tr": "Sonuç panoya kopyalandı",
+    "en": "Result copied to clipboard"
+  },
+  "ui.cleared": {
+    "tr": "Alanlar sıfırlandı",
+    "en": "Inputs reset"
+  },
+  "ui.disc": {
+    "tr": "<b>Tıbbi sorumluluk reddi.</b> Bu uygulama yalnızca eğitim ve klinik karar desteği amaçlıdır; profesyonel tıbbi değerlendirmenin yerine geçmez. Sonuçları hastanın klinik bağlamında yorumlayınız.<br><b>Bu bir deneme sürümüdür ve hatalar içerebilir; önemli bilgileri mutlaka ikinci bir kaynaktan kontrol ediniz.</b>",
+    "en": "<b>Medical disclaimer.</b> This app is for education and clinical decision support only and is not a substitute for professional medical judgment. Interpret all results within the patient's clinical context.<br><b>This is a trial/beta version and may contain errors; please double-check any important information.</b>"
+  },
+  "ui.reportTitle": {
+    "tr": "DermaScores — Klinik Skor Raporu",
+    "en": "DermaScores — Clinical Score Report"
+  },
+  "ui.date": {
+    "tr": "Tarih",
+    "en": "Date"
+  },
+  "ui.result": {
+    "tr": "Sonuç",
+    "en": "Result"
+  },
+  "ui.interp": {
+    "tr": "Yorum",
+    "en": "Interpretation"
+  },
+  "criteria.navLabel": {
+    "tr": "Tanı Kriterleri",
+    "en": "Diagnostic Criteria"
+  },
+  "criteria.calcNavLabel": {
+    "tr": "Skorlar",
+    "en": "Calculators"
+  },
+  "criteria.title": {
+    "tr": "Tanı Kriterleri Asistanı",
+    "en": "Diagnostic Criteria Assistant"
+  },
+  "criteria.tagline": {
+    "tr": "Resmi tanı kriterlerine göre hızlı checklist ve klinik yönlendirme",
+    "en": "Quick checklist and clinical guidance based on formal diagnostic criteria"
+  },
+  "criteria.search": {
+    "tr": "Hastalık ara…",
+    "en": "Search disease…"
+  },
+  "criteria.banner": {
+    "tr": "<b>Klinik karar desteği.</b> Bu araç hekim değerlendirmesinin yerini tutmaz; hasta karşısında hekim tarafından doldurulan bir hatırlatma/checklist aracıdır.",
+    "en": "<b>Clinical decision support.</b> This tool does not replace physician judgment; it is a checklist/reminder aid meant to be filled in by a physician at the point of care."
+  },
+  "criteria.criteriaSetLabel": {
+    "tr": "Kriter Seti",
+    "en": "Criteria Set"
+  },
+  "criteria.met": {
+    "tr": "Kriterleri karşılıyor",
+    "en": "Meets criteria"
+  },
+  "criteria.notMet": {
+    "tr": "Kriterleri karşılamıyor",
+    "en": "Does not meet criteria"
+  },
+  "criteria.score": {
+    "tr": "Puan",
+    "en": "Score"
+  },
+  "criteria.nextSteps": {
+    "tr": "Sıradaki Adımlar",
+    "en": "Next Steps"
+  },
+  "criteria.workup": {
+    "tr": "Tetkik",
+    "en": "Workup"
+  },
+  "criteria.treatment": {
+    "tr": "Tedavi Yönelimi",
+    "en": "Treatment Orientation"
+  },
+  "criteria.referral": {
+    "tr": "Sevk Kriterleri",
+    "en": "Referral Criteria"
+  },
+  "criteria.differentials": {
+    "tr": "Sık Karışan Ayırıcı Tanılar",
+    "en": "Common Differential Diagnoses"
+  },
+  "criteria.references": {
+    "tr": "Kaynaklar",
+    "en": "References"
+  },
+  "criteria.reset": {
+    "tr": "Sıfırla",
+    "en": "Reset"
+  },
+  "criteria.print": {
+    "tr": "PDF / Yazdır",
+    "en": "PDF / Print"
+  },
+  "criteria.reportTitle": {
+    "tr": "Tanı Kriterleri Değerlendirme Raporu",
+    "en": "Diagnostic Criteria Assessment Report"
+  },
+  "criteria.none": {
+    "tr": "Sonuç bulunamadı",
+    "en": "No results found"
+  },
+  "criteria.all": {
+    "tr": "Tümü",
+    "en": "All"
+  },
+  "criteria.relatedCalcs": {
+    "tr": "İlgili skorlar",
+    "en": "Related scores"
+  },
+  "criteria.relatedHint": {
+    "tr": "Bu araçlar Skorlar bölümünde hazır — tıklayınca oraya geçer",
+    "en": "These tools live in the Calculators section — click to jump there"
+  },
+  "criteria.mandatoryMissing": {
+    "tr": "Zorunlu kriter işaretlenmedi",
+    "en": "Mandatory criterion not ticked"
+  }
+}
