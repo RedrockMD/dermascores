@@ -1,0 +1,584 @@
+{
+  "count": 39,
+  "calculators": [
+    {
+      "id": "PASI",
+      "category": "pso",
+      "name": "PASI",
+      "full": {
+        "tr": "Psoriazis Alan ve Şiddet İndeksi",
+        "en": "Psoriasis Area and Severity Index"
+      },
+      "about": {
+        "tr": "Psoriaziste 4 vücut bölgesinde eritem, endürasyon (kalınlık) ve deskuamasyonu (0–4) ve tutulan alanı birleştiren standart şiddet ölçümü. PASI ≥10 genellikle sistemik tedavi adayını gösterir (\"onlar kuralı\").",
+        "en": "Standard psoriasis severity measure combining erythema, induration and desquamation (0–4) with involved area across 4 body regions. PASI ≥10 generally indicates a systemic-therapy candidate (\"rule of tens\")."
+      },
+      "range": "0–72",
+      "hasLogic": true
+    },
+    {
+      "id": "PSSI",
+      "category": "pso",
+      "name": "PSSI",
+      "full": {
+        "tr": "Saçlı Deri Psoriazis Şiddet İndeksi",
+        "en": "Psoriasis Scalp Severity Index"
+      },
+      "about": {
+        "tr": "Saçlı deri psoriazisinde eritem, endürasyon ve deskuamasyon (0–4) toplamının saçlı deri tutulum alanı derecesi (0–6) ile çarpımı.",
+        "en": "Scalp psoriasis severity: the sum of erythema, induration and desquamation (0–4) multiplied by the scalp area grade (0–6)."
+      },
+      "range": "0–72",
+      "hasLogic": true
+    },
+    {
+      "id": "NAPSI",
+      "category": "pso",
+      "name": "NAPSI",
+      "full": {
+        "tr": "Tırnak Psoriazisi Şiddet İndeksi",
+        "en": "Nail Psoriasis Severity Index"
+      },
+      "about": {
+        "tr": "Her tırnak 4 kadrana bölünür. Tırnak matriksi bulguları (çukurlaşma, lökonişi, lunulada kırmızı nokta, ufalanma) kaç kadranda görülürse 0–4; tırnak yatağı bulguları (onikoliz, yağ damlası lekesi, splinter kanama, subungual hiperkeratoz) 0–4. 10 el tırnağı toplamı 0–80.",
+        "en": "Each nail is divided into 4 quadrants. Matrix features (pitting, leukonychia, red spots in the lunula, crumbling) score 0–4 by quadrants involved; nail-bed features (onycholysis, oil-drop discolouration, splinter haemorrhage, subungual hyperkeratosis) score 0–4. Total across 10 fingernails 0–80."
+      },
+      "range": "0–80",
+      "hasLogic": true
+    },
+    {
+      "id": "BSA",
+      "category": "gen",
+      "name": "BSA",
+      "full": {
+        "tr": "Vücut Yüzey Alanı",
+        "en": "Body Surface Area"
+      },
+      "about": {
+        "tr": "Tutulan vücut yüzey alanı yüzdesi. Dokuzlar kuralı ile her bölgenin tutulum yüzdesi girilir. Pratik kural: hastanın bir avuç içi ≈ %1 BSA. Psoriazis/egzemada <%3 sınırlı, %3–10 orta, >%10 yaygın kabul edilir.",
+        "en": "Percentage of body surface area involved. Enter the involved percentage of each region using the rule of nines. Practical rule: the patient's palm ≈ 1% BSA. For psoriasis/eczema <3% limited, 3–10% moderate, >10% extensive."
+      },
+      "range": "0–100%",
+      "hasLogic": true
+    },
+    {
+      "id": "EASI",
+      "category": "ecz",
+      "name": "EASI",
+      "full": {
+        "tr": "Egzama Alan ve Şiddet İndeksi",
+        "en": "Eczema Area and Severity Index"
+      },
+      "about": {
+        "tr": "Atopik dermatitte 4 bölgede eritem, ödem/papülasyon, ekskoriasyon ve likenifikasyonu (0–3) ve tutulan alanı birleştirir. Bölge ağırlıkları yaşa göre değişir (8 yaş altında baş ve ekstremiteler farklı). Yorum: 0 temiz, 0.1–1 neredeyse temiz, 1.1–7 hafif, 7.1–21 orta, 21.1–50 şiddetli, >50 çok şiddetli.",
+        "en": "Atopic dermatitis severity combining erythema, edema/papulation, excoriation and lichenification (0–3) with involved area across 4 regions. Regional weights are age-dependent (head and limbs differ under age 8). Interpretation: 0 clear, 0.1–1 almost clear, 1.1–7 mild, 7.1–21 moderate, 21.1–50 severe, >50 very severe."
+      },
+      "range": "0–72",
+      "hasLogic": true
+    },
+    {
+      "id": "SCORAD",
+      "category": "ecz",
+      "name": "SCORAD",
+      "full": {
+        "tr": "Atopik Dermatit Skorlaması",
+        "en": "Scoring Atopic Dermatitis"
+      },
+      "about": {
+        "tr": "SCORAD = A/5 + 7·B/2 + C. A: tutulan alan (% BSA, dokuzlar kuralı). B: 6 şiddet bulgusu toplamı (her biri 0–3). C: kaşıntı ve uyku kaybı VAS toplamı (0–20). Yorum: <25 hafif, 25–50 orta, >50 şiddetli.",
+        "en": "SCORAD = A/5 + 7·B/2 + C. A: extent (% BSA, rule of nines). B: sum of 6 intensity signs (each 0–3). C: VAS sum of pruritus and sleep loss (0–20). Interpretation: <25 mild, 25–50 moderate, >50 severe."
+      },
+      "range": "0–103",
+      "hasLogic": true
+    },
+    {
+      "id": "POEM",
+      "category": "ecz",
+      "name": "POEM",
+      "full": {
+        "tr": "Hasta Odaklı Egzama Ölçütü",
+        "en": "Patient-Oriented Eczema Measure"
+      },
+      "about": {
+        "tr": "Hastanın son 1 haftada egzama belirtilerini kaç gün yaşadığını ölçen 7 maddelik anket (her madde 0–4). Yorum: 0–2 temiz/neredeyse temiz, 3–7 hafif, 8–16 orta, 17–24 şiddetli, 25–28 çok şiddetli.",
+        "en": "A 7-item patient questionnaire scoring how many days over the last week eczema symptoms were present (each item 0–4). Interpretation: 0–2 clear/almost clear, 3–7 mild, 8–16 moderate, 17–24 severe, 25–28 very severe."
+      },
+      "range": "0–28",
+      "hasLogic": true
+    },
+    {
+      "id": "GAGS",
+      "category": "acne",
+      "name": "GAGS",
+      "full": {
+        "tr": "Global Akne Derecelendirme Sistemi",
+        "en": "Global Acne Grading System"
+      },
+      "about": {
+        "tr": "6 yüz/gövde bölgesi bölge faktörü ile çarpılır. Her bölgede en ağır lezyon tipi puanlanır (0 yok, 1 komedon, 2 papül, 3 püstül, 4 nodül). Lokal skor = faktör × derece. Yorum: 1–18 hafif, 19–30 orta, 31–38 şiddetli, ≥39 çok şiddetli.",
+        "en": "Six facial/trunk regions each multiplied by a region factor. The most severe lesion type per region is graded (0 none, 1 comedone, 2 papule, 3 pustule, 4 nodule). Local score = factor × grade. Interpretation: 1–18 mild, 19–30 moderate, 31–38 severe, ≥39 very severe."
+      },
+      "range": "0–44",
+      "hasLogic": true
+    },
+    {
+      "id": "Hurley",
+      "category": "hs",
+      "name": "Hurley",
+      "full": {
+        "tr": "Hurley Evrelemesi",
+        "en": "Hurley Staging"
+      },
+      "about": {
+        "tr": "Hidradenitis süpürativada hastalık şiddetini 3 klinik evreye ayıran sınıflama. Tedavi seçimi için temel çerçevedir; ileri evreler cerrahi/biyolojik tedavi gerektirebilir.",
+        "en": "A 3-stage clinical classification of hidradenitis suppurativa severity. It is the basic framework for treatment selection; advanced stages may require surgical or biologic therapy."
+      },
+      "range": "I–III",
+      "hasLogic": true
+    },
+    {
+      "id": "IHS4",
+      "category": "hs",
+      "name": "IHS4",
+      "full": {
+        "tr": "Uluslararası HS Şiddet Skoru",
+        "en": "International HS Severity Score System"
+      },
+      "about": {
+        "tr": "Hidradenitis süpürativada dinamik şiddet ölçümü: nodül sayısı + (2 × abse sayısı) + (4 × drene olan tünel/fistül sayısı). Yorum: ≤3 hafif, 4–10 orta, ≥11 şiddetli.",
+        "en": "A dynamic HS severity measure: number of nodules + (2 × abscesses) + (4 × draining tunnels/fistulas). Interpretation: ≤3 mild, 4–10 moderate, ≥11 severe."
+      },
+      "range": "0+",
+      "hasLogic": true
+    },
+    {
+      "id": "UAS7",
+      "category": "urt",
+      "name": "UAS7",
+      "full": {
+        "tr": "Ürtiker Aktivite Skoru (7 gün)",
+        "en": "Urticaria Activity Score (7 days)"
+      },
+      "about": {
+        "tr": "Kronik spontan ürtikerde 7 gün boyunca her gün kabarcık (ürtika) ve kaşıntı 0–3 puanlanır; günlük skor 0–6, haftalık toplam 0–42. Yorum: 0 ürtikersiz, 1–6 iyi kontrol, 7–15 hafif, 16–27 orta, 28–42 şiddetli.",
+        "en": "In chronic spontaneous urticaria, wheals and itch are each scored 0–3 daily for 7 days; daily score 0–6, weekly total 0–42. Interpretation: 0 urticaria-free, 1–6 well-controlled, 7–15 mild, 16–27 moderate, 28–42 severe."
+      },
+      "range": "0–42",
+      "hasLogic": true
+    },
+    {
+      "id": "VASI",
+      "category": "pig",
+      "name": "VASI",
+      "full": {
+        "tr": "Vitiligo Alan Skorlama İndeksi",
+        "en": "Vitiligo Area Scoring Index"
+      },
+      "about": {
+        "tr": "Vitiligoda her bölgede lezyon alanı el birimi ile (1 el birimi ≈ %1 BSA) ölçülür ve rezidüel depigmentasyon yüzdesi ile çarpılır. VASI = Σ (el birimi × depigmentasyon%/100), tutulan % BSA olarak ifade edilir.",
+        "en": "In vitiligo, lesion area per region is measured in hand units (1 hand unit ≈ 1% BSA) and multiplied by residual depigmentation. VASI = Σ (hand units × depigmentation%/100), expressed as % BSA involved."
+      },
+      "range": "0–100%",
+      "hasLogic": true
+    },
+    {
+      "id": "VIDA",
+      "category": "pig",
+      "name": "VIDA",
+      "full": {
+        "tr": "Vitiligo Hastalık Aktivitesi",
+        "en": "Vitiligo Disease Activity"
+      },
+      "about": {
+        "tr": "Vitiligoda hastalık aktivitesini hastanın bildirdiği son aktivite zamanına göre 6 noktalı skala ile değerlendirir. Yüksek puan daha aktif hastalığı gösterir; negatif puan spontan repigmentasyonu ifade eder.",
+        "en": "A 6-point scale rating vitiligo disease activity by the patient-reported time of last activity. A higher score indicates more active disease; a negative score reflects spontaneous repigmentation."
+      },
+      "range": "-1 — +4",
+      "hasLogic": true
+    },
+    {
+      "id": "SALT",
+      "category": "hair",
+      "name": "SALT",
+      "full": {
+        "tr": "Alopesi Şiddet Aracı",
+        "en": "Severity of Alopecia Tool"
+      },
+      "about": {
+        "tr": "Alopesi areatada saçlı deri 4 bölgeye ayrılır (tepe %40, arka %24, sağ yan %18, sol yan %18). Her bölgenin saçsız alan yüzdesi alan ağırlığı ile çarpılır ve toplanır. SALT skoru = toplam saç kaybı yüzdesi.",
+        "en": "In alopecia areata the scalp is divided into 4 areas (vertex 40%, posterior 24%, right side 18%, left side 18%). The hair-loss % of each area is multiplied by its weight and summed. SALT score = total % scalp hair loss."
+      },
+      "range": "0–100%",
+      "hasLogic": true
+    },
+    {
+      "id": "mMASI",
+      "category": "pig",
+      "name": "mMASI",
+      "full": {
+        "tr": "Modifiye Melazma Alan ve Şiddet İndeksi",
+        "en": "Modified Melasma Area and Severity Index"
+      },
+      "about": {
+        "tr": "Melazmada 4 yüz bölgesinde (alın, sağ malar, sol malar, çene) tutulan alan (0–6) ve koyuluk (0–4) puanlanır. mMASI = Σ (alan × koyuluk × bölge ağırlığı); alın/malar 0.3, çene 0.1. Homojenite bileşeni çıkarılmıştır.",
+        "en": "In melasma, 4 facial regions (forehead, right malar, left malar, chin) are scored for involved area (0–6) and darkness (0–4). mMASI = Σ (area × darkness × region weight); forehead/malar 0.3, chin 0.1. The homogeneity component is removed."
+      },
+      "range": "0–24",
+      "hasLogic": true
+    },
+    {
+      "id": "DLQI",
+      "category": "gen",
+      "name": "DLQI",
+      "full": {
+        "tr": "Dermatoloji Yaşam Kalitesi İndeksi",
+        "en": "Dermatology Life Quality Index"
+      },
+      "about": {
+        "tr": "Deri hastalığının son 1 haftada yaşam kalitesine etkisini ölçen 10 maddelik anket (her madde 0–3). Yorum: 0–1 etki yok, 2–5 küçük etki, 6–10 orta etki, 11–20 çok büyük etki, 21–30 aşırı büyük etki.",
+        "en": "A 10-item questionnaire measuring the impact of skin disease on quality of life over the last week (each item 0–3). Interpretation: 0–1 no effect, 2–5 small, 6–10 moderate, 11–20 very large, 21–30 extremely large effect."
+      },
+      "range": "0–30",
+      "hasLogic": true
+    },
+    {
+      "id": "IGA",
+      "category": "gen",
+      "name": "IGA",
+      "full": {
+        "tr": "Araştırmacı Global Değerlendirmesi",
+        "en": "Investigator's Global Assessment"
+      },
+      "about": {
+        "tr": "Hastalığın genel klinik şiddetini tek bir 5 noktalı skalada (0–4) özetleyen statik değerlendirme. Birçok dermatolojik hastalıkta ve klinik çalışmada ortak son nokta olarak kullanılır.",
+        "en": "A static rating that summarises overall clinical severity on a single 5-point scale (0–4). Used as a common endpoint across many dermatologic conditions and clinical trials."
+      },
+      "range": "0–4",
+      "hasLogic": true
+    },
+    {
+      "id": "PDAI",
+      "category": "bul",
+      "name": "PDAI",
+      "full": {
+        "tr": "Pemfigus Hastalık Alan İndeksi",
+        "en": "Pemphigus Disease Area Index"
+      },
+      "about": {
+        "tr": "Pemfigusta deri ve mukoza aktivitesi ile kalıcı hasarı ölçer. Bileşen alt toplamları bölgesel muayeneden elde edilip girilir: deri aktivitesi 0–120, saçlı deri 0–10, mukoza aktivitesi 0–120, hasar 0–13. Toplam 0–263.",
+        "en": "Measures skin and mucosal activity plus persistent damage in pemphigus. Component subtotals are derived from regional examination and entered: skin activity 0–120, scalp 0–10, mucosal activity 0–120, damage 0–13. Total 0–263."
+      },
+      "range": "0–263",
+      "hasLogic": true
+    },
+    {
+      "id": "BPDAI",
+      "category": "bul",
+      "name": "BPDAI",
+      "full": {
+        "tr": "Büllöz Pemfigoid Hastalık Alan İndeksi",
+        "en": "Bullous Pemphigoid Disease Area Index"
+      },
+      "about": {
+        "tr": "Büllöz pemfigoidde deri aktivitesi iki bileşenden oluşur: erozyon/bül ve ürtikeryal/eritem; mukoza ayrıca puanlanır. Aktivite toplamı = bu üç bileşen (0–360). Kaşıntı VAS (0–30) ayrı bildirilir. Aktivite yorumu: ≤19 hafif, 20–56 orta, ≥57 şiddetli.",
+        "en": "In bullous pemphigoid, skin activity comprises two components — erosion/blister and urticarial/erythema; mucosa is scored separately. Activity total = these three components (0–360). Pruritus VAS (0–30) is reported separately. Activity interpretation: ≤19 mild, 20–56 moderate, ≥57 severe."
+      },
+      "range": "0–360",
+      "hasLogic": true
+    },
+    {
+      "id": "mRSS",
+      "category": "ctd",
+      "name": "mRSS",
+      "full": {
+        "tr": "Modifiye Rodnan Deri Skoru",
+        "en": "Modified Rodnan Skin Score"
+      },
+      "about": {
+        "tr": "Sistemik sklerozda 17 vücut bölgesinde deri kalınlaşması palpasyonla 0–3 (0 normal, 1 hafif, 2 orta, 3 şiddetli) puanlanır. Toplam 0–51; deri tutulumunun yaygınlığını ve seyrini izlemede temel ölçüttür.",
+        "en": "In systemic sclerosis, skin thickening is graded by palpation 0–3 (0 normal, 1 mild, 2 moderate, 3 severe) at 17 body sites. Total 0–51; the key measure for extent and course of skin involvement."
+      },
+      "range": "0–51",
+      "hasLogic": true
+    },
+    {
+      "id": "mLoSSI",
+      "category": "ctd",
+      "name": "mLoSSI",
+      "full": {
+        "tr": "Modifiye Lokalize Skleroderma Deri Şiddet İndeksi",
+        "en": "Modified Localized Scleroderma Skin Severity Index"
+      },
+      "about": {
+        "tr": "Morfea (lokalize skleroderma) AKTİVİTESİNİ ölçer. 18 anatomik bölgede eritem (0–3) ve deri kalınlığı (0–3) puanlanır; son 1 ay içinde yeni lezyon veya lezyon genişlemesi varsa 3 puan eklenir. Toplam 0–162. Aktivite: 0–4 hafif, 5–12 orta, ≥13 şiddetli. LoSCAT'ın aktivite bileşenidir; hasar için LoSDI kullanılır.",
+        "en": "Measures ACTIVITY in morphea (localized scleroderma). At 18 anatomic sites, erythema (0–3) and skin thickness (0–3) are graded; a new lesion or lesion extension within the past month adds 3 points. Total 0–162. Activity: 0–4 mild, 5–12 moderate, ≥13 severe. It is the activity component of LoSCAT; use LoSDI for damage."
+      },
+      "range": "0–162",
+      "hasLogic": true
+    },
+    {
+      "id": "LoSDI",
+      "category": "ctd",
+      "name": "LoSDI",
+      "full": {
+        "tr": "Lokalize Skleroderma Deri Hasar İndeksi",
+        "en": "Localized Scleroderma Skin Damage Index"
+      },
+      "about": {
+        "tr": "Morfeada kalıcı HASARI ölçer. Aynı 18 anatomik bölgede dermal atrofi, subkutan atrofi ve dispigmentasyon 0–3 puanlanır (0 yok, 1 hafif, 2 orta, 3 belirgin). Toplam 0–162. Hasar: 0–10 hafif, 11–15 orta, ≥16 şiddetli. Aktivite değil hasar ölçer; ikisi birlikte LoSCAT'ı oluşturur.",
+        "en": "Measures irreversible DAMAGE in morphea. At the same 18 anatomic sites, dermal atrophy, subcutaneous atrophy and dyspigmentation are graded 0–3 (0 none, 1 mild, 2 moderate, 3 marked). Total 0–162. Damage: 0–10 mild, 11–15 moderate, ≥16 severe. It measures damage rather than activity; together with mLoSSI it forms LoSCAT."
+      },
+      "range": "0–162",
+      "hasLogic": true
+    },
+    {
+      "id": "LoSCAT",
+      "category": "ctd",
+      "name": "LoSCAT",
+      "full": {
+        "tr": "Lokalize Skleroderma Kutanöz Değerlendirme Aracı",
+        "en": "Localized Scleroderma Cutaneous Assessment Tool"
+      },
+      "about": {
+        "tr": "Morfeada aktivite ve hasarın birlikte raporlandığı bileşik araçtır: mLoSSI (aktivite) + LoSDI (hasar), yanında hekim global aktivite (PGA-A) ve hasar (PGA-D) değerlendirmeleri. mLoSSI ve LoSDI hesaplayıcılarını ayrı doldurup toplamlarını buraya girin. İki indeksin toplamı için valide edilmiş bir şiddet eşiği yoktur; bileşenler ayrı ayrı yorumlanır.",
+        "en": "The composite tool that reports activity and damage together in morphea: mLoSSI (activity) + LoSDI (damage), alongside the physician global assessments of activity (PGA-A) and damage (PGA-D). Fill in the mLoSSI and LoSDI calculators separately and enter their totals here. There is no validated severity cut-off for the sum of the two indices; the components are interpreted separately."
+      },
+      "range": "0–324",
+      "hasLogic": true
+    },
+    {
+      "id": "mSWAT",
+      "category": "ctcl",
+      "name": "mSWAT",
+      "full": {
+        "tr": "Modifiye Ağırlıklı Şiddet Değerlendirme Aracı",
+        "en": "Modified Severity-Weighted Assessment Tool"
+      },
+      "about": {
+        "tr": "Kutanöz T hücreli lenfomada (mikozis fungoides) deri tümör yükünü ölçer. Her lezyon tipinin tuttuğu % BSA ağırlıklandırılır: mSWAT = (%yama × 1) + (%plak × 2) + (%tümör × 4). Aralık 0–400.",
+        "en": "Quantifies cutaneous tumour burden in cutaneous T-cell lymphoma (mycosis fungoides). The % BSA of each lesion type is weighted: mSWAT = (%patch × 1) + (%plaque × 2) + (%tumour × 4). Range 0–400."
+      },
+      "range": "0–400",
+      "hasLogic": true
+    },
+    {
+      "id": "SCORTEN",
+      "category": "emg",
+      "name": "SCORTEN",
+      "full": {
+        "tr": "Toksik Epidermal Nekroliz Şiddet Skoru",
+        "en": "Toxic Epidermal Necrolysis Severity Score"
+      },
+      "about": {
+        "tr": "Stevens-Johnson sendromu / toksik epidermal nekrolizde hastaneye yatışın ilk 24 saatinde değerlendirilen 7 ölçütlü mortalite tahmin skoru. Tahmini mortalite: 0–1 %3.2, 2 %12.1, 3 %35.3, 4 %58.3, ≥5 %90.",
+        "en": "A 7-criterion mortality-prediction score for Stevens-Johnson syndrome / toxic epidermal necrolysis, assessed within the first 24 hours of admission. Predicted mortality: 0–1 3.2%, 2 12.1%, 3 35.3%, 4 58.3%, ≥5 90%."
+      },
+      "range": "0–7",
+      "hasLogic": true
+    },
+    {
+      "id": "5-D",
+      "category": "itch",
+      "name": "5-D",
+      "full": {
+        "tr": "5 Boyutlu Kaşıntı Ölçeği",
+        "en": "5-D Itch Scale"
+      },
+      "about": {
+        "tr": "Kronik kaşıntıyı 5 boyutta değerlendirir: süre, derece, yön (gidişat), engellilik ve dağılım. Her boyut 1–5 puan; engellilik 4 aktivitenin en yükseğidir. Toplam 5–25; yüksek puan daha şiddetli kaşıntıyı gösterir.",
+        "en": "Assesses chronic itch across 5 dimensions: duration, degree, direction, disability and distribution. Each dimension scores 1–5; disability uses the highest of 4 activities. Total 5–25; a higher score indicates more severe itch."
+      },
+      "range": "5–25",
+      "hasLogic": true
+    },
+    {
+      "id": "NRS",
+      "category": "itch",
+      "name": "NRS",
+      "full": {
+        "tr": "Kaşıntı Sayısal Derecelendirme Ölçeği",
+        "en": "Pruritus Numerical Rating Scale"
+      },
+      "about": {
+        "tr": "Hastanın son 24 saatteki en kötü kaşıntısını 0 (kaşıntı yok) ile 10 (hayal edilebilecek en kötü kaşıntı) arasında derecelendirir. Yorum: 1–3 hafif, 4–6 orta, 7–8 şiddetli, 9–10 çok şiddetli.",
+        "en": "The patient rates their worst itch over the last 24 hours from 0 (no itch) to 10 (worst imaginable itch). Interpretation: 1–3 mild, 4–6 moderate, 7–8 severe, 9–10 very severe."
+      },
+      "range": "0–10",
+      "hasLogic": true
+    },
+    {
+      "id": "CDLQI",
+      "category": "gen",
+      "name": "CDLQI",
+      "full": {
+        "tr": "Çocuk Dermatoloji Yaşam Kalitesi İndeksi",
+        "en": "Children's Dermatology Life Quality Index"
+      },
+      "about": {
+        "tr": "DLQI'nin 4–16 yaş çocuklar için uyarlanmış 10 maddelik biçimi (her madde 0–3, son 1 hafta). Yorum: 0–1 etki yok, 2–6 küçük, 7–12 orta, 13–18 çok büyük, 19–30 aşırı büyük etki.",
+        "en": "The version of the DLQI adapted for children aged 4–16, with 10 items (each 0–3, last week). Interpretation: 0–1 no effect, 2–6 small, 7–12 moderate, 13–18 very large, 19–30 extremely large effect."
+      },
+      "range": "0–30",
+      "hasLogic": true
+    },
+    {
+      "id": "PEST",
+      "category": "pso",
+      "name": "PEST",
+      "full": {
+        "tr": "Psoriatik Artrit Tarama Aracı",
+        "en": "Psoriasis Epidemiology Screening Tool"
+      },
+      "about": {
+        "tr": "Psoriazis hastalarında psoriatik artriti taramak için 5 evet/hayır sorusundan oluşan basit araç. Toplam ≥3 ise psoriatik artrit olasıdır; romatolojiye yönlendirme önerilir.",
+        "en": "A simple 5-question yes/no tool to screen psoriasis patients for psoriatic arthritis. A total ≥3 suggests possible psoriatic arthritis and referral to rheumatology is advised."
+      },
+      "range": "0–5",
+      "hasLogic": true
+    },
+    {
+      "id": "BMI",
+      "category": "im",
+      "name": "BMI",
+      "full": {
+        "tr": "Beden Kitle İndeksi",
+        "en": "Body Mass Index"
+      },
+      "about": {
+        "tr": "Ağırlığın boy karesine oranı: BMI = ağırlık(kg) / boy(m)². DSÖ sınıflaması: <18.5 zayıf, 18.5–24.9 normal, 25–29.9 fazla kilolu, 30–34.9 obez I, 35–39.9 obez II, ≥40 obez III.",
+        "en": "Weight relative to height squared: BMI = weight(kg) / height(m)². WHO classification: <18.5 underweight, 18.5–24.9 normal, 25–29.9 overweight, 30–34.9 obese I, 35–39.9 obese II, ≥40 obese III."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "CrCl",
+      "category": "im",
+      "name": "CrCl",
+      "full": {
+        "tr": "Kreatinin Klirensi (Cockcroft–Gault)",
+        "en": "Creatinine Clearance (Cockcroft–Gault)"
+      },
+      "about": {
+        "tr": "İlaç doz ayarlamasında yaygın kullanılan böbrek fonksiyonu tahmini. CrCl = [(140 − yaş) × ağırlık × (kadında 0.85)] / (72 × serum kreatinin). Sonuç mL/dk olarak verilir.",
+        "en": "An estimate of renal function widely used for drug dose adjustment. CrCl = [(140 − age) × weight × (0.85 if female)] / (72 × serum creatinine). Result is in mL/min."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "eGFR",
+      "category": "im",
+      "name": "eGFR",
+      "full": {
+        "tr": "Tahmini GFH (CKD-EPI 2021)",
+        "en": "Estimated GFR (CKD-EPI 2021)"
+      },
+      "about": {
+        "tr": "Kronik böbrek hastalığını evrelemek için kullanılan 2021 ırktan bağımsız CKD-EPI kreatinin denklemi. Sonuç mL/dk/1.73m². KDIGO evreleri: G1 ≥90, G2 60–89, G3a 45–59, G3b 30–44, G4 15–29, G5 <15.",
+        "en": "The 2021 race-free CKD-EPI creatinine equation used to stage chronic kidney disease. Result in mL/min/1.73m². KDIGO categories: G1 ≥90, G2 60–89, G3a 45–59, G3b 30–44, G4 15–29, G5 <15."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "FIB-4",
+      "category": "im",
+      "name": "FIB-4",
+      "full": {
+        "tr": "FIB-4 Karaciğer Fibrozis İndeksi",
+        "en": "FIB-4 Liver Fibrosis Index"
+      },
+      "about": {
+        "tr": "Karaciğer hastalığında ileri fibrozisi noninvaziv değerlendiren indeks. FIB-4 = (yaş × AST) / (trombosit × √ALT). Yorum: <1.45 düşük risk, 1.45–3.25 belirsiz, >3.25 ileri fibrozis için yüksek risk.",
+        "en": "A non-invasive index for advanced fibrosis in liver disease. FIB-4 = (age × AST) / (platelets × √ALT). Interpretation: <1.45 low risk, 1.45–3.25 indeterminate, >3.25 high risk for advanced fibrosis."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "APRI",
+      "category": "im",
+      "name": "APRI",
+      "full": {
+        "tr": "AST/Trombosit Oranı İndeksi",
+        "en": "AST to Platelet Ratio Index"
+      },
+      "about": {
+        "tr": "Karaciğer fibrozisi/sirozu için noninvaziv belirteç. APRI = [(AST / AST üst sınırı) × 100] / trombosit. Yorum: <0.5 anlamlı fibrozis olası değil, >1.5 anlamlı fibrozis/siroz olası.",
+        "en": "A non-invasive marker of liver fibrosis/cirrhosis. APRI = [(AST / AST upper limit) × 100] / platelets. Interpretation: <0.5 significant fibrosis unlikely, >1.5 significant fibrosis/cirrhosis likely."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "CorrCa",
+      "category": "im",
+      "name": "Ca²⁺ düz.",
+      "full": {
+        "tr": "Albümine Göre Düzeltilmiş Kalsiyum",
+        "en": "Albumin-Corrected Calcium"
+      },
+      "about": {
+        "tr": "Hipoalbüminemide ölçülen total kalsiyumu düzeltir: Düzeltilmiş Ca = ölçülen Ca + 0.8 × (4.0 − albümin). Değerler mg/dL ve g/dL. Normal aralık yaklaşık 8.5–10.5 mg/dL.",
+        "en": "Corrects measured total calcium in hypoalbuminemia: corrected Ca = measured Ca + 0.8 × (4.0 − albumin). Values in mg/dL and g/dL. Normal range approximately 8.5–10.5 mg/dL."
+      },
+      "hasLogic": true
+    },
+    {
+      "id": "CHA2DS2-VASc",
+      "category": "im",
+      "name": "CHA₂DS₂-VASc",
+      "full": {
+        "tr": "Atriyal Fibrilasyonda İnme Riski",
+        "en": "Stroke Risk in Atrial Fibrillation"
+      },
+      "about": {
+        "tr": "Nonvalvüler atriyal fibrilasyonda inme/tromboemboli riskini öngörür (0–9). Oral antikoagülasyon genellikle skor ≥2 (erkek) veya ≥3 (kadın) olduğunda önerilir; skor arttıkça yıllık inme riski yükselir.",
+        "en": "Predicts stroke/thromboembolism risk in non-valvular atrial fibrillation (0–9). Oral anticoagulation is generally recommended at a score ≥2 (men) or ≥3 (women); annual stroke risk rises with the score."
+      },
+      "range": "0–9",
+      "hasLogic": true
+    },
+    {
+      "id": "CURB-65",
+      "category": "im",
+      "name": "CURB-65",
+      "full": {
+        "tr": "Toplum Kökenli Pnömoni Şiddeti",
+        "en": "Community-Acquired Pneumonia Severity"
+      },
+      "about": {
+        "tr": "Toplum kökenli pnömonide şiddeti ve tedavi yerini belirlemeye yardımcı 5 ölçüt. Yorum: 0–1 düşük risk (ayaktan tedavi), 2 orta risk (yatış düşünün), 3–5 yüksek risk (hastane; yoğun bakım değerlendirin).",
+        "en": "Five criteria that help determine severity and site of care in community-acquired pneumonia. Interpretation: 0–1 low risk (outpatient), 2 moderate risk (consider admission), 3–5 high risk (hospitalize; consider ICU)."
+      },
+      "range": "0–5",
+      "hasLogic": true
+    },
+    {
+      "id": "Child-Pugh",
+      "category": "im",
+      "name": "Child-Pugh",
+      "full": {
+        "tr": "Child-Pugh Karaciğer Sirozu Skoru",
+        "en": "Child-Pugh Cirrhosis Score"
+      },
+      "about": {
+        "tr": "Karaciğer sirozunda hastalık şiddetini ve prognozu sınıflar. 5 parametre, her biri 1–3 puan; toplam 5–15. Sınıf A 5–6 (iyi), Sınıf B 7–9 (orta), Sınıf C 10–15 (kötü prognoz).",
+        "en": "Classifies disease severity and prognosis in liver cirrhosis. Five parameters, each 1–3 points; total 5–15. Class A 5–6 (good), Class B 7–9 (moderate), Class C 10–15 (poor prognosis)."
+      },
+      "range": "5–15",
+      "hasLogic": true
+    },
+    {
+      "id": "MELD-Na",
+      "category": "im",
+      "name": "MELD-Na",
+      "full": {
+        "tr": "MELD-Na Karaciğer Hastalığı Skoru",
+        "en": "MELD-Na End-Stage Liver Disease Score"
+      },
+      "about": {
+        "tr": "Son dönem karaciğer hastalığında kısa dönem mortaliteyi öngören ve transplantasyon önceliklendirmesinde kullanılan skor. Laboratuvar değerleri <1.0 ise 1.0 alınır; kreatinin en çok 4.0; sodyum 125–137 ile sınırlandırılır. Sonuç 6–40.",
+        "en": "A score predicting short-term mortality in end-stage liver disease, used for transplant prioritization. Lab values <1.0 are set to 1.0; creatinine is capped at 4.0; sodium is bounded 125–137. Result 6–40."
+      },
+      "range": "6–40",
+      "hasLogic": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "dermascores",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clinical dermatology severity scores and diagnostic criteria — single-file app plus exported JSON datasets",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "export-data": "node tools/export-data.mjs",
+    "verify-data": "node tools/verify-data.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

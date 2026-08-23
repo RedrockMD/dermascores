@@ -1,0 +1,116 @@
+{
+  "calculators": {
+    "pso": {
+      "tr": "Psoriazis",
+      "en": "Psoriasis",
+      "color": "#5b8cff"
+    },
+    "ecz": {
+      "tr": "Egzama",
+      "en": "Eczema",
+      "color": "#34d8c4"
+    },
+    "acne": {
+      "tr": "Akne",
+      "en": "Acne",
+      "color": "#f59e0b"
+    },
+    "hs": {
+      "tr": "Hidradenitis",
+      "en": "Hidradenitis",
+      "color": "#f472b6"
+    },
+    "urt": {
+      "tr": "Ürtiker",
+      "en": "Urticaria",
+      "color": "#a78bfa"
+    },
+    "pig": {
+      "tr": "Pigmentasyon",
+      "en": "Pigmentation",
+      "color": "#22d3ee"
+    },
+    "hair": {
+      "tr": "Saç",
+      "en": "Hair",
+      "color": "#fb923c"
+    },
+    "bul": {
+      "tr": "Büllöz",
+      "en": "Bullous",
+      "color": "#fbbf24"
+    },
+    "ctd": {
+      "tr": "Bağ dokusu",
+      "en": "Connective tissue",
+      "color": "#818cf8"
+    },
+    "ctcl": {
+      "tr": "Kutanöz lenfoma",
+      "en": "Cutaneous lymphoma",
+      "color": "#c084fc"
+    },
+    "emg": {
+      "tr": "Acil",
+      "en": "Emergency",
+      "color": "#fb7185"
+    },
+    "itch": {
+      "tr": "Kaşıntı",
+      "en": "Pruritus",
+      "color": "#4ade80"
+    },
+    "gen": {
+      "tr": "Genel",
+      "en": "General",
+      "color": "#94a3b8"
+    },
+    "im": {
+      "tr": "Dahiliye",
+      "en": "Internal medicine",
+      "color": "#2dd4bf"
+    }
+  },
+  "criteria": {
+    "neut": {
+      "tr": "Nötrofilik dermatoz",
+      "en": "Neutrophilic dermatosis",
+      "color": "#f97316"
+    },
+    "vasc": {
+      "tr": "Vaskülit / Otoinflamatuar",
+      "en": "Vasculitis / Autoinflammatory",
+      "color": "#e11d48"
+    },
+    "bulld": {
+      "tr": "Büllöz",
+      "en": "Bullous",
+      "color": "#fbbf24"
+    },
+    "drug": {
+      "tr": "Ciddi ilaç reaksiyonu",
+      "en": "Severe drug reaction",
+      "color": "#dc2626"
+    },
+    "peds": {
+      "tr": "Pediatrik vaskülit",
+      "en": "Pediatric vasculitis",
+      "color": "#22d3ee"
+    },
+    "hsx": {
+      "tr": "Hidradenitis",
+      "en": "Hidradenitis",
+      "color": "#f472b6"
+    },
+    "ecz": {
+      "tr": "Egzama",
+      "en": "Eczema",
+      "color": "#34d8c4"
+    },
+    "arth": {
+      "tr": "Artropati",
+      "en": "Arthropathy",
+      "color": "#818cf8"
+    }
+  }
+}
